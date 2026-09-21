@@ -241,3 +241,40 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 @media (prefers-color-scheme: dark) { .banner-backup.urgente { background: #3a1c1c; border-color: #a24444; } }
 .banner-backup .btn-mini { margin-left: 4px; }
 .pasta-backup { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--borda); padding-top: 8px; margin-top: 4px; }
+
+/* --- Fase B: sinalização, roteiro, pré-treinamento, modo foco --- */
+.btn-mini.ativo { background: var(--primaria-clara); color: var(--primaria); border-color: var(--primaria); }
+.barra-estudo { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+
+/* Destaque de termos no texto (cor por tipo, consistente) */
+.termo-hl { border-radius: 3px; padding: 0 1px; }
+.hl-nome { background: var(--primaria-clara); }
+.hl-data { background: #eae2ff; }
+.hl-conceito { background: #e2f5ee; }
+@media (prefers-color-scheme: dark) { .hl-data { background: #2e2450; } .hl-conceito { background: #163a2c; } }
+
+/* Pré-treinamento */
+.pre-treino { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 10px 14px; margin: 10px 0; }
+.pre-treino summary { font-weight: 700; cursor: pointer; }
+.pretreino-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip-pretreino { border: 1px solid var(--borda); border-radius: 999px; padding: 4px 10px; font-size: .85rem; cursor: pointer; color: var(--texto); }
+.chip-pretreino:hover { border-color: var(--primaria); }
+
+/* Roteiro (capítulos) */
+.roteiro { display: none; flex-direction: column; gap: 8px; background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 14px; margin: 6px 0 10px; }
+.roteiro.aberto { display: flex; }
+.roteiro-item { border-left: 3px solid var(--primaria); padding-left: 10px; }
+.roteiro-titulo { display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; font: inherit; font-weight: 700; color: var(--texto); text-align: left; padding: 2px 0; }
+.roteiro-num { background: var(--primaria); color: #fff; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; }
+.roteiro-frase { display: block; text-align: left; background: var(--superficie-2); border: none; border-radius: 8px; padding: 6px 10px; margin-top: 4px; cursor: pointer; font: inherit; color: var(--texto-suave); width: 100%; }
+.roteiro-frase:hover { color: var(--texto); }
+.roteiro-frase .aspas { color: var(--primaria); font-weight: 700; margin-right: 2px; }
+.roteiro-frase .seg-tempo { margin-left: 6px; }
+
+/* Modo foco: só o player e a frase atual */
+.aula-layout.foco { grid-template-columns: 1fr; }
+.aula-layout.foco .coluna-lateral, .aula-layout.foco .barra-busca, .aula-layout.foco .resultados-busca,
+.aula-layout.foco .pre-treino, .aula-layout.foco .roteiro { display: none; }
+.aula-layout.foco .seg:not(.seg-atual) { display: none; }
+.aula-layout.foco .seg-atual { font-size: 1.5rem; line-height: 1.75; padding: 30px 20px; text-align: center; background: transparent; }
+.aula-layout.foco .seg-atual .seg-tempo, .aula-layout.foco .seg-editar { display: none; }

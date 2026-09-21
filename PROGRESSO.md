@@ -185,3 +185,24 @@ apenas *inventar* um narrador/professor que não existe.
   Em Chrome/Edge, dá para **escolher uma pasta** e salvar o backup direto nela.
 - Testes: 21 testes de lógica + 14 verificações de navegador, todos passando
   (incluindo um teste que corrige um trecho e confere que foi salvo).
+
+### Princípio central: "fundamentado, nunca inventado"
+
+A pedido seu (a interpretação não pode ser fraca a ponto de estragar um estudo),
+o app segue uma regra de segurança: **ele nunca inventa significado**. Todo
+resumo, termo, destaque ou capítulo aponta para uma **frase real da aula, com o
+horário**. Quem interpreta é você; o app organiza e leva você ao trecho exato.
+Uma "interpretação avançada" com IA rodando no próprio navegador (grátis, sem
+chave) fica como opção futura, para computadores mais fortes.
+
+### Fase B — Sinalização, Modo Foco e Estrutura (pronta e testada)
+
+- **Destaque de termos no texto**, com cores por tipo (nome, data, conceito),
+  para o olho ir direto ao que importa (princípio de sinalização/cueing).
+- **Pré-treinamento:** antes de ouvir, o app mostra os termos-chave da aula
+  (com o horário de onde aparecem) para você conhecer o vocabulário.
+- **Roteiro automático (capítulos):** a aula é dividida em partes; cada parte
+  mostra uma frase da PRÓPRIA aula (com horário) — nada de resumo inventado.
+- **Modo Foco:** esconde tudo menos o player e a frase atual, para concentrar.
+- Testes: 26 de lógica (novos: capítulos, termos-chave, destaque) + 19 de
+  navegador (novos: pré-treino, destaque, roteiro, modo foco).

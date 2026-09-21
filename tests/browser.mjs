@@ -85,6 +85,17 @@ try {
   const nBusca = await page.locator('.resultados-busca .resultado').count();
   checar('busca dentro da aula encontra "europa"', nBusca >= 1);
 
+  // Fase B: pré-treinamento, destaque de termos, roteiro e modo foco.
+  checar('pré-treinamento mostra termos-chave', (await page.locator('.chip-pretreino').count()) >= 1);
+  checar('termos destacados no texto', (await page.locator('.transcricao .termo-hl').count()) >= 1);
+  await page.click('.barra-estudo button:has-text("Roteiro")');
+  await page.waitForSelector('.roteiro.aberto', { timeout: 4000 });
+  checar('roteiro abre com capítulos', (await page.locator('.roteiro-item').count()) >= 1);
+  checar('roteiro mostra frase da própria aula', (await page.locator('.roteiro-frase').count()) >= 1);
+  await page.click('.barra-estudo button:has-text("Modo foco")');
+  checar('modo foco é ativado', await page.isVisible('.aula-layout.foco'));
+  await page.click('.barra-estudo button:has-text("Modo foco")');
+
   // Abre a pesquisa de um termo (só valida que o modal abre).
   await page.click('.painel-termos .termo:first-child button:has-text("pesquisar")');
   await page.waitForSelector('.modal-largo', { timeout: 5000 });

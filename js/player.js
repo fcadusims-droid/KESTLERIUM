@@ -6,6 +6,7 @@ import * as db from './db.js';
 import { formatTime, escapeHtml, humanDuration, makeId, normalize } from './format.js';
 import { searchSegments, segmentIndexAtTime, highlight } from './search.js';
 import { mergeTerms, suggestMerges } from './entities.js';
+import { chapterize, keyTerms, makeTermHighlighter } from './study.js';
 import { researchTerm, resolveOption } from './research.js';
 import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
 import { MODELS, IDIOMAS } from './config.js';
@@ -53,13 +54,31 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
     audio.addEventListener('loadedmetadata', irNoInicio);
   }
 
+  // Termos, destaque e capítulos — tudo fundamentado no texto real da aula.
+  let termos = await lessons.gerarTermos(lessonId).catch(() => []);
+  const highlighter = makeTermHighlighter(termos);
+  const capitulos = chapterize(segs, termos);
+  let destacarTermos = true;
+
   const busca = el('input', { class: 'campo', type: 'search', placeholder: 'Buscar uma palavra nesta aula…', 'aria-label': 'Buscar nesta aula' });
   const resultadosBusca = el('div', { class: 'resultados-busca' });
   const transcricao = el('div', { class: 'transcricao', role: 'list' });
 
+  // Barra de estudo.
+  const btnDestacar = el('button', { class: 'btn-mini ativo', onclick: () => { destacarTermos = !destacarTermos; btnDestacar.classList.toggle('ativo', destacarTermos); aplicarDestaque(); } }, '🖍️ Destacar termos');
+  const roteiro = construirRoteiro(capitulos, irPara);
+  const barraEstudo = el('div', { class: 'barra-estudo' }, [
+    el('button', { class: 'btn-mini', onclick: () => alternarFoco() }, '🎯 Modo foco'),
+    btnDestacar,
+    el('button', { class: 'btn-mini', onclick: () => roteiro.classList.toggle('aberto') }, `🗺️ Roteiro (${capitulos.length})`),
+  ]);
+
   const layout = el('div', { class: 'aula-layout' }, [
     el('div', { class: 'coluna-principal' }, [
       el('div', { class: 'player-caixa' }, [audio]),
+      construirPreTreino(termos, irPara),
+      barraEstudo,
+      roteiro,
       el('div', { class: 'barra-busca' }, [busca]),
       resultadosBusca,
       transcricao,
@@ -68,10 +87,24 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   ]);
   container.appendChild(layout);
 
+  function alternarFoco() {
+    layout.classList.toggle('foco');
+    if (layout.classList.contains('foco') && segEls[atual]) segEls[atual].scrollIntoView({ block: 'center' });
+  }
+  function aplicarDestaque() {
+    for (const { s, texto } of segTextos) {
+      if (destacarTermos) texto.innerHTML = highlighter(s.text);
+      else texto.textContent = s.text;
+    }
+  }
+
   // Monta os trechos clicáveis (e editáveis, para corrigir erros).
   const segEls = [];
+  const segTextos = [];
   for (const s of segs) {
-    const texto = el('span', { class: 'seg-texto' }, s.text);
+    const texto = el('span', { class: 'seg-texto' });
+    texto.innerHTML = highlighter(s.text);
+    segTextos.push({ s, texto });
     const editar = el('button', {
       class: 'seg-editar', title: 'Corrigir este trecho', 'aria-label': 'Corrigir este trecho',
       onclick: (e) => { e.stopPropagation(); abrirEdicao(s, t, texto); },
@@ -159,6 +192,44 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
 
   // Limpa o object URL quando sair da tela.
   ctx.aoSair(() => { if (audioUrl) URL.revokeObjectURL(audioUrl); });
+}
+
+// -------- Pré-treinamento: conhecer os termos-chave antes de ouvir --------
+function construirPreTreino(termos, irPara) {
+  const chaves = keyTerms(termos, 8);
+  if (!chaves.length) return el('span', {});
+  const chips = chaves.map((k) => el('button', {
+    class: `chip-pretreino hl-${k.kind || 'nome'}`, title: `Ouvir onde aparece (${formatTime(k.start)})`,
+    onclick: () => irPara(k.start),
+  }, `${k.name} · ${formatTime(k.start)}`));
+  const det = el('details', { class: 'pre-treino', open: true }, [
+    el('summary', {}, 'Prepare-se: termos-chave desta aula'),
+    dica('Conhecer estes termos antes ajuda a entender melhor. Clique num deles para ouvir onde aparece. (Foram tirados da própria aula.)'),
+    el('div', { class: 'pretreino-chips' }, chips),
+  ]);
+  return det;
+}
+
+// -------- Roteiro automático (capítulos com a frase-chave da própria aula) --------
+function construirRoteiro(capitulos, irPara) {
+  const box = el('div', { class: 'roteiro' });
+  box.appendChild(dica('Roteiro montado automaticamente. Cada trecho mostra uma frase da PRÓPRIA aula (com o horário) — o app não inventa resumo.'));
+  if (!capitulos.length) { box.appendChild(el('p', { class: 'dica' }, 'Sem capítulos.')); return box; }
+  capitulos.forEach((c, i) => {
+    box.appendChild(el('div', { class: 'roteiro-item' }, [
+      el('button', { class: 'roteiro-titulo', onclick: () => irPara(c.startSec) }, [
+        el('span', { class: 'roteiro-num' }, String(i + 1)),
+        el('span', {}, c.titulo || `Parte ${i + 1}`),
+        el('span', { class: 'seg-tempo' }, formatTime(c.startSec)),
+      ]),
+      el('button', { class: 'roteiro-frase', title: `Ouvir (${formatTime(c.fraseChave.start)})`, onclick: () => irPara(c.fraseChave.start) }, [
+        el('span', { class: 'aspas' }, '“'),
+        el('span', {}, c.fraseChave.text),
+        el('span', { class: 'seg-tempo' }, formatTime(c.fraseChave.start)),
+      ]),
+    ]));
+  });
+  return box;
 }
 
 // -------- Painel de transcrição (início/retomar/cancelar/progresso) --------
