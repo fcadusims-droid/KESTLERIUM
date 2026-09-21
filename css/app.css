@@ -1,0 +1,226 @@
+/* Kestlerium — estilo simples, claro e legível. Cores por variáveis. */
+:root {
+  --fundo: #f6f7f9;
+  --superficie: #ffffff;
+  --superficie-2: #eef1f5;
+  --texto: #1f2430;
+  --texto-suave: #5b6472;
+  --borda: #d9dee6;
+  --primaria: #2f6df6;
+  --primaria-escura: #1f56d0;
+  --primaria-clara: #e7f0ff;
+  --perigo: #d64545;
+  --sucesso: #1f9d55;
+  --aviso-fundo: #fff6e0;
+  --aviso-borda: #f0c869;
+  --destaque: #ffe08a;
+  --sombra: 0 1px 3px rgba(20, 30, 50, .08), 0 4px 16px rgba(20, 30, 50, .06);
+  --raio: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #14171d;
+    --superficie: #1c2129;
+    --superficie-2: #232a34;
+    --texto: #e7ebf2;
+    --texto-suave: #9aa4b2;
+    --borda: #333b47;
+    --primaria: #5b8dff;
+    --primaria-escura: #3f74f0;
+    --primaria-clara: #22304d;
+    --aviso-fundo: #3a3016;
+    --aviso-borda: #7a642a;
+    --destaque: #7a6320;
+    --sombra: 0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.3);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--fundo);
+  color: var(--texto);
+  line-height: 1.55;
+  font-size: 16px;
+}
+a { color: var(--primaria); }
+.link { color: var(--primaria); text-decoration: none; cursor: pointer; }
+.link:hover { text-decoration: underline; }
+.voltar { display: inline-block; margin-bottom: 10px; }
+h2 { font-size: 1.5rem; margin: .4em 0; }
+h3 { font-size: 1.15rem; margin: .6em 0 .3em; }
+h4 { font-size: 1rem; margin: .5em 0 .2em; }
+mark { background: var(--destaque); color: inherit; border-radius: 3px; padding: 0 2px; }
+
+/* Cabeçalho */
+.cabecalho { background: var(--superficie); border-bottom: 1px solid var(--borda); position: sticky; top: 0; z-index: 50; box-shadow: var(--sombra); }
+.cabecalho-inner { max-width: 1100px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.marca { text-decoration: none; color: var(--texto); display: flex; flex-direction: column; line-height: 1.1; }
+.marca-nome { font-weight: 800; font-size: 1.35rem; letter-spacing: .5px; }
+.marca-sub { font-size: .78rem; color: var(--texto-suave); }
+.nav { display: flex; gap: 6px; }
+.nav-link { padding: 8px 14px; border-radius: 999px; text-decoration: none; color: var(--texto-suave); font-weight: 600; }
+.nav-link:hover { background: var(--superficie-2); }
+.nav-link.ativo { background: var(--primaria-clara); color: var(--primaria); }
+
+.app { max-width: 1100px; margin: 0 auto; padding: 18px 16px 60px; }
+.rodape { max-width: 1100px; margin: 0 auto; padding: 20px 16px; color: var(--texto-suave); font-size: .85rem; text-align: center; }
+
+/* Botões */
+.btn { font: inherit; font-weight: 600; padding: 11px 18px; border-radius: var(--raio); border: 1px solid transparent; cursor: pointer; background: var(--superficie-2); color: var(--texto); transition: background .15s, transform .05s; }
+.btn:active { transform: translateY(1px); }
+.btn-primario { background: var(--primaria); color: #fff; }
+.btn-primario:hover { background: var(--primaria-escura); }
+.btn-secundario { background: var(--superficie-2); border-color: var(--borda); }
+.btn-secundario:hover { background: var(--borda); }
+.btn-perigo { background: var(--perigo); color: #fff; }
+.btn-mini { font: inherit; font-size: .82rem; padding: 4px 9px; border-radius: 8px; border: 1px solid var(--borda); background: var(--superficie); color: var(--texto-suave); cursor: pointer; }
+.btn-mini:hover { background: var(--superficie-2); color: var(--texto); }
+.btn-mini-perigo:hover { background: var(--perigo); color: #fff; border-color: var(--perigo); }
+
+/* Campos */
+.campo, .select-materia, select.campo { font: inherit; width: 100%; padding: 10px 12px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); color: var(--texto); }
+.campo:focus { outline: 2px solid var(--primaria); border-color: var(--primaria); }
+.rotulo { display: block; font-weight: 600; margin: 12px 0 4px; }
+.dica { color: var(--texto-suave); font-size: .9rem; margin: 6px 0; }
+.aviso { background: var(--aviso-fundo); border: 1px solid var(--aviso-borda); padding: 10px 12px; border-radius: var(--raio); }
+
+/* Banner de backup */
+.banner-backup { background: var(--aviso-fundo); border: 1px solid var(--aviso-borda); border-radius: var(--raio); padding: 10px 14px; margin-bottom: 14px; font-size: .92rem; }
+.banner-icone { margin-right: 6px; }
+
+/* Ações do topo */
+.acoes-topo { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0; }
+.barra-busca, .barra-busca-global { margin: 12px 0; }
+.campo-busca { font-size: 1.05rem; }
+
+/* Resultados de busca */
+.resultados-busca { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.resultado { display: flex; gap: 10px; align-items: baseline; text-align: left; width: 100%; background: var(--superficie); border: 1px solid var(--borda); border-radius: 10px; padding: 8px 12px; cursor: pointer; font: inherit; color: var(--texto); text-decoration: none; }
+.resultado:hover { border-color: var(--primaria); }
+.resultado-aula { font-weight: 700; color: var(--primaria); white-space: nowrap; }
+.resultado-texto { color: var(--texto); }
+.seg-tempo { font-variant-numeric: tabular-nums; color: var(--primaria); font-weight: 600; white-space: nowrap; }
+
+/* Seções */
+.secao-cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+.vazio { text-align: center; padding: 40px 10px; color: var(--texto-suave); }
+
+/* Matérias / árvore */
+.arvore-materias { margin-top: 10px; display: flex; flex-direction: column; gap: 14px; }
+.materia { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 14px; box-shadow: var(--sombra); }
+.materia-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.materia-nome { margin: 0; }
+.materia-controles { display: flex; gap: 6px; flex-wrap: wrap; }
+.termos-fixados { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.chip-termo { display: inline-flex; align-items: center; gap: 4px; background: var(--primaria-clara); color: var(--primaria); border-radius: 999px; padding: 3px 6px 3px 10px; font-size: .85rem; }
+.chip-x { border: none; background: transparent; color: var(--primaria); cursor: pointer; font-size: .8rem; }
+.sugestoes { margin: 8px 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip-sugestao { background: var(--superficie-2); border: 1px dashed var(--borda); border-radius: 999px; padding: 3px 10px; font-size: .82rem; cursor: pointer; color: var(--texto-suave); }
+.chip-sugestao:hover { border-color: var(--primaria); color: var(--primaria); }
+
+/* Linha de aula */
+.linha-aula { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 6px; border-top: 1px solid var(--borda); flex-wrap: wrap; }
+.linha-aula:first-of-type { border-top: none; }
+.aula-link { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--texto); flex: 1; min-width: 200px; }
+.aula-link:hover .aula-nome { color: var(--primaria); }
+.aula-nome { font-weight: 600; }
+.aula-detalhe { color: var(--texto-suave); font-size: .85rem; }
+.linha-acoes { display: flex; align-items: center; gap: 6px; }
+.select-materia { width: auto; padding: 5px 8px; font-size: .85rem; }
+.chip-status { font-size: .75rem; padding: 2px 8px; border-radius: 999px; background: var(--superficie-2); color: var(--texto-suave); }
+.status-done { background: #dff5e6; color: #1f7a45; }
+.status-transcribing { background: #e2ecff; color: #2f6df6; }
+.status-paused { background: #fff0d6; color: #a9761a; }
+.status-error { background: #fde2e2; color: #c23a3a; }
+@media (prefers-color-scheme: dark) {
+  .status-done { background: #163a26; color: #6fdc9b; }
+  .status-transcribing { background: #1c2f52; color: #8fb2ff; }
+  .status-paused { background: #3a2f16; color: #e0b869; }
+  .status-error { background: #3a1c1c; color: #f09a9a; }
+}
+
+/* Tela da aula */
+.aula-topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.aula-titulo { margin: 0; }
+.aula-layout { display: grid; grid-template-columns: 1fr 360px; gap: 18px; align-items: start; }
+@media (max-width: 860px) { .aula-layout { grid-template-columns: 1fr; } }
+.player-caixa { position: sticky; top: 70px; z-index: 10; background: var(--fundo); padding-bottom: 8px; }
+.player { width: 100%; }
+.transcricao { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; }
+.seg { display: flex; gap: 10px; align-items: baseline; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+.seg:hover { background: var(--superficie-2); }
+.seg-atual { background: var(--primaria-clara); }
+.seg-texto { color: var(--texto); }
+
+/* Painel de transcrição */
+.painel-transcricao { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 16px; margin: 12px 0; box-shadow: var(--sombra); }
+.barra-progresso { height: 14px; background: var(--superficie-2); border-radius: 999px; overflow: hidden; margin: 10px 0 4px; }
+.barra-preenche { height: 100%; width: 0; background: var(--primaria); transition: width .3s; }
+.progresso-rotulo { font-weight: 600; margin: 2px 0; }
+.acoes { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+
+/* Painel de termos */
+.painel-termos { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 14px; box-shadow: var(--sombra); }
+.acoes-termos { display: flex; gap: 6px; margin: 6px 0 10px; flex-wrap: wrap; }
+.lista-termos { display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow: auto; }
+.termo { border: 1px solid var(--borda); border-radius: 10px; padding: 8px 10px; }
+.termo-cabecalho { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.termo-nome { font-weight: 700; }
+.termo-nome.merge-ativo { outline: 2px dashed var(--primaria); border-radius: 4px; padding: 0 3px; }
+.etiqueta { font-size: .68rem; text-transform: uppercase; letter-spacing: .5px; padding: 1px 6px; border-radius: 999px; font-weight: 700; }
+.etiqueta-nome { background: var(--primaria-clara); color: var(--primaria); }
+.etiqueta-data { background: #eae2ff; color: #6b45c9; }
+.etiqueta-conceito { background: #e2f5ee; color: #1f9d55; }
+.etiqueta-fonte { background: var(--superficie-2); color: var(--texto-suave); }
+.termo-contagem { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--texto-suave); font-weight: 700; }
+.termo-controles { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+.termo-horarios { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.chip-tempo { font-variant-numeric: tabular-nums; font-size: .8rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--borda); background: var(--superficie); color: var(--primaria); cursor: pointer; text-decoration: none; }
+.chip-tempo:hover { background: var(--primaria-clara); }
+
+/* Modais */
+.modal-overlay { position: fixed; inset: 0; background: rgba(15, 20, 30, .5); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+.modal { background: var(--superficie); border-radius: var(--raio); padding: 20px; width: 100%; max-width: 460px; box-shadow: var(--sombra); max-height: 90vh; overflow: auto; }
+.modal-largo { max-width: 900px; }
+.modal-msg { margin: 0 0 14px; }
+.modal-acoes { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+.modal-acoes.coluna { flex-direction: column; align-items: stretch; }
+.modal-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+
+/* Pesquisa */
+.colunas-pesquisa { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .colunas-pesquisa { grid-template-columns: 1fr; } }
+.lado { background: var(--superficie-2); border-radius: 10px; padding: 12px; }
+.trecho-aula { margin: 8px 0; display: flex; gap: 8px; align-items: baseline; }
+.trecho-texto { color: var(--texto); }
+.fonte-card { background: var(--superficie); border: 1px solid var(--borda); border-radius: 10px; padding: 12px; }
+.fonte-cabecalho { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.fonte-resumo { margin: 6px 0; }
+.opcoes { display: flex; flex-direction: column; gap: 6px; }
+.opcao { text-align: left; background: var(--superficie); border: 1px solid var(--borda); border-radius: 8px; padding: 8px 10px; cursor: pointer; font: inherit; color: var(--texto); display: flex; flex-direction: column; gap: 2px; }
+.opcao:hover { border-color: var(--primaria); }
+.opcao-snippet { font-size: .82rem; color: var(--texto-suave); }
+.wikidata-box { margin-top: 12px; }
+.wikidata-item { margin: 4px 0; }
+.wikidata-desc { color: var(--texto-suave); }
+.rodape-fontes { margin-top: 12px; border-top: 1px solid var(--borda); padding-top: 8px; }
+
+/* Índice de termos / página de termo */
+.indice-termos { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.indice-item { display: flex; justify-content: space-between; gap: 10px; padding: 8px 12px; border: 1px solid var(--borda); border-radius: 8px; text-decoration: none; color: var(--texto); }
+.indice-item:hover { border-color: var(--primaria); }
+.indice-nome { font-weight: 600; }
+.termo-aula-bloco { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 14px; margin: 10px 0; }
+
+/* Ajuda */
+.ajuda-secao { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 16px; margin: 10px 0; }
+.ajuda { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--superficie-2); color: var(--texto-suave); font-size: .75rem; font-weight: 700; cursor: help; margin-left: 4px; }
+
+/* Toast */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(120%); background: #222; color: #fff; padding: 12px 18px; border-radius: 999px; box-shadow: var(--sombra); z-index: 200; opacity: 0; transition: transform .3s, opacity .3s; max-width: 90vw; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast-sucesso { background: var(--sucesso); }
+.toast-erro { background: var(--perigo); }
+.toast-info { background: #333; }
