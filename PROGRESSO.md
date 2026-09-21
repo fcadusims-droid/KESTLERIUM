@@ -218,3 +218,16 @@ chave) fica como opção futura, para computadores mais fortes.
 - Testes: 29 de lógica (novos: lacuna e geração de atividades) e o teste de
   navegador simula chegar ao fim de um capítulo e confirma que a atividade
   aparece e que o estudo chega ao fim (21 verificações no total).
+
+### Fase D — Cartões e Revisão Espaçada (pronta e testada)
+
+- **Criar cartões:** a partir de uma aula, o app gera cartões (flashcards)
+  fundamentados: lacunas de frases reais, "o que a aula diz sobre X" (com a frase
+  onde aparece) e datas. A resposta é sempre uma frase da própria aula, com o
+  horário para reouvir.
+- **Revisão espaçada:** uma tela "Revisar" mostra os cartões vencidos; você tenta
+  lembrar, revela a resposta e diz se acertou (Errei/Difícil/Bom/Fácil). O app
+  reagenda cada cartão (algoritmo tipo SM-2): o que você sabe volta mais tarde, o
+  que você erra volta logo. O menu mostra quantos cartões estão para revisar.
+- Os cartões entram no backup. Testes: 33 de lógica (novos: geração e
+  agendamento) e o navegador cria cartões, revela e avalia (24 verificações).

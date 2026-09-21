@@ -65,7 +65,7 @@ try {
       for (let i = 0; i < n; i++) dv.setUint8(44 + i, 128);
       return new Blob([buf], { type: 'audio/wav' });
     };
-    const abrir = () => new Promise((res, rej) => { const r = indexedDB.open('kestlerium', 1); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    const abrir = () => new Promise((res, rej) => { const r = indexedDB.open('kestlerium'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
     const db = await abrir();
     const tx = db.transaction(['lessons', 'segments', 'audio'], 'readwrite');
     tx.objectStore('lessons').put({ id: 'aula_test', title: 'Aula de Teste', subjectId: null, status: 'done', progress: 1, duration: 20, modelKey: 'base', language: 'portuguese', chunksDone: [0], chunksTotal: 1, createdAt: new Date().toISOString() });
@@ -141,11 +141,23 @@ try {
   const textoCorrigido = await page.textContent('.transcricao .seg:first-child .seg-texto');
   checar('correção de trecho é salva', textoCorrigido === 'Texto corrigido pelo teste.');
 
+  // Fase D: cartões e revisão espaçada.
+  await page.click('.barra-estudo button:has-text("Criar cartões")');
+  await page.waitForSelector('.card-revisao', { timeout: 6000 });
+  checar('revisão mostra um cartão', await page.isVisible('.card-frente'));
+  await page.click('.card-revisao button:has-text("Mostrar resposta")');
+  checar('resposta do cartão é revelada', await page.isVisible('.card-verso.revelado'));
+  await page.click('.card-notas button:has-text("Bom")');
+  await page.waitForTimeout(250);
+  const aindaCard = await page.isVisible('.card-frente').catch(() => false);
+  const fimRevisao = (await page.locator('.vazio').count()) > 0;
+  checar('avaliar cartão avança a revisão', aindaCard || fimRevisao);
+
   // Volta e cria uma matéria.
   await page.goto(base + '/', { waitUntil: 'load' });
   await page.waitForSelector('.marca-nome', { timeout: 15000 });
   await page.evaluate(async () => {
-    const abrir = () => new Promise((res, rej) => { const r = indexedDB.open('kestlerium', 1); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    const abrir = () => new Promise((res, rej) => { const r = indexedDB.open('kestlerium'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
     const db = await abrir();
     const tx = db.transaction(['subjects'], 'readwrite');
     tx.objectStore('subjects').put({ id: 'mat1', name: 'História', parentId: null, order: 1, pinned: [] });

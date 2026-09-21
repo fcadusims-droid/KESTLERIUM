@@ -7,6 +7,7 @@ import { formatTime, escapeHtml, humanDuration, makeId, normalize } from './form
 import { searchSegments, segmentIndexAtTime, highlight } from './search.js';
 import { mergeTerms, suggestMerges } from './entities.js';
 import { chapterize, keyTerms, makeTermHighlighter, gerarAtividades } from './study.js';
+import { criarCartoesDaAula } from './cards.js';
 import { researchTerm, resolveOption } from './research.js';
 import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
 import { MODELS, IDIOMAS } from './config.js';
@@ -74,6 +75,14 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
     el('button', { class: 'btn-mini', onclick: () => alternarFoco() }, '🎯 Modo foco'),
     btnDestacar,
     el('button', { class: 'btn-mini', onclick: () => roteiro.classList.toggle('aberto') }, `🗺️ Roteiro (${capitulos.length})`),
+    el('button', { class: 'btn-mini', onclick: async (e) => {
+      e.target.disabled = true;
+      const cs = await criarCartoesDaAula(lessonId, segs, termos, capitulos, { recriar: true });
+      if (ctx.atualizarContadores) ctx.atualizarContadores();
+      toast(`${cs.length} cartão(ões) criados. Vá em "Revisar" para estudar.`, 'sucesso');
+      e.target.disabled = false;
+      ctx.navigate('#/revisar');
+    } }, '🃏 Criar cartões'),
   ]);
 
   const layout = el('div', { class: 'aula-layout' }, [

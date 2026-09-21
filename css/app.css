@@ -295,3 +295,19 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 .atividade-acoes { margin-top: 12px; display: flex; justify-content: flex-end; }
 .feedback-ok { color: var(--sucesso); font-weight: 700; }
 .feedback-quase { color: var(--texto); }
+
+/* --- Fase D: cartões e revisão espaçada --- */
+.nav-link.tem-pendencia { background: var(--primaria); color: #fff; }
+.revisao-painel { margin-top: 10px; }
+.card-revisao { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 20px; box-shadow: var(--sombra); max-width: 640px; margin: 0 auto; }
+.card-tipo { font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; color: var(--texto-suave); font-weight: 700; }
+.card-frente { font-size: 1.3rem; margin: 10px 0 16px; line-height: 1.5; }
+.card-verso { margin: 12px 0; }
+.card-verso.revelado { border-top: 1px solid var(--borda); padding-top: 12px; }
+.card-frase { font-style: italic; }
+.card-notas { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.btn-nota { flex: 1; min-width: 90px; color: #fff; }
+.nota-errei { background: var(--perigo); }
+.nota-dificil { background: #d98324; }
+.nota-bom { background: var(--primaria); }
+.nota-facil { background: var(--sucesso); }

@@ -36,7 +36,8 @@ export async function montarBackup({ incluirAudios = true, onProgress } = {}) {
   for (const lesson of lessons) {
     const segments = await db.getAllByIndex(db.STORES.segments, 'lessonId', lesson.id);
     const terms = await db.getAllByIndex(db.STORES.terms, 'lessonId', lesson.id);
-    const item = { ...lesson, segments, terms };
+    const cards = await db.getAllByIndex(db.STORES.cards, 'lessonId', lesson.id);
+    const item = { ...lesson, segments, terms, cards };
     if (incluirAudios) {
       const audio = await db.get(db.STORES.audio, lesson.id);
       if (audio && audio.blob) {
@@ -133,10 +134,11 @@ export async function importarBackup(file, { onProgress } = {}) {
 
   let i = 0;
   for (const item of dados.lessons) {
-    const { segments = [], terms = [], audioBase64, audioType, ...lesson } = item;
+    const { segments = [], terms = [], cards = [], audioBase64, audioType, ...lesson } = item;
     await db.put(db.STORES.lessons, lesson);
     if (segments.length) await db.putMany(db.STORES.segments, segments);
     if (terms.length) await db.putMany(db.STORES.terms, terms);
+    if (cards.length) await db.putMany(db.STORES.cards, cards);
     if (audioBase64) {
       const blob = base64ParaBlob(audioBase64, audioType);
       await db.put(db.STORES.audio, { lessonId: lesson.id, blob, fileName: lesson.fileName, type: audioType });
