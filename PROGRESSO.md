@@ -161,3 +161,27 @@ navegador. Dá para estudar tranquilamente.
 - Ativar o GitHub Pages no modo "GitHub Actions" (o passo a passo está no
   COMO-USAR.md). Você disse que já preparou o repositório para Actions — ótimo.
 - Enviar suas aulas e, principalmente, **fazer backup de vez em quando.**
+
+---
+
+## Atualização — Kestlerium 2.0 (Estudo Ativo)
+
+A pedido, comecei a transformar o app numa ferramenta de estudo ativo baseada
+na ciência da aprendizagem multimídia, e a resolver as limitações registradas.
+Reforço importante: **o "narrador" do estudo é sempre a voz da própria aula que
+você enviou** — todo o app é construído em volta dela. O que ficou de fora é
+apenas *inventar* um narrador/professor que não existe.
+
+### Fase A — Correções das limitações (pronta e testada)
+
+- **Transcrição editável:** agora dá para corrigir o texto de qualquer trecho à
+  mão (resolve a limitação dos erros de reconhecimento). O trecho corrigido fica
+  marcado e é salvo no navegador.
+- **Sugestão de mesclagem de termos (correferência):** o app sugere juntar termos
+  que provavelmente são o mesmo (ex.: "Napoleão" e "Napoleão Bonaparte"), com um
+  clique. Resolve a limitação da falta de correferência.
+- **Backup mais seguro:** o app agora lembra quando foi seu último backup e mostra
+  um aviso mais forte (vermelho) quando faz tempo ou você adicionou várias aulas.
+  Em Chrome/Edge, dá para **escolher uma pasta** e salvar o backup direto nela.
+- Testes: 21 testes de lógica + 14 verificações de navegador, todos passando
+  (incluindo um teste que corrige um trecho e confere que foi salvo).

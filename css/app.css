@@ -224,3 +224,20 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 .toast-sucesso { background: var(--sucesso); }
 .toast-erro { background: var(--perigo); }
 .toast-info { background: #333; }
+
+/* --- Fase A: edição de trecho, sugestões de mesclagem, backup --- */
+.seg { position: relative; }
+.seg-editar { opacity: 0; border: none; background: transparent; cursor: pointer; color: var(--texto-suave); font-size: .9rem; padding: 0 4px; }
+.seg:hover .seg-editar, .seg:focus-within .seg-editar { opacity: 1; }
+.seg-editar:hover { color: var(--primaria); }
+.seg-edicao-caixa { width: 100%; margin-top: 4px; }
+.seg-edicao { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--primaria); border-radius: 8px; background: var(--superficie); color: var(--texto); resize: vertical; }
+.seg-edicao-acoes { display: flex; gap: 6px; margin-top: 4px; }
+
+.sugestoes-merge { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 8px; }
+.sugestao-merge { display: flex; align-items: center; gap: 6px; font-size: .85rem; background: var(--superficie-2); border-radius: 8px; padding: 4px 8px; flex-wrap: wrap; }
+
+.banner-backup.urgente { background: #fde2e2; border-color: var(--perigo); }
+@media (prefers-color-scheme: dark) { .banner-backup.urgente { background: #3a1c1c; border-color: #a24444; } }
+.banner-backup .btn-mini { margin-left: 4px; }
+.pasta-backup { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--borda); padding-top: 8px; margin-top: 4px; }

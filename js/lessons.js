@@ -55,6 +55,16 @@ export async function salvarAula(lesson) {
   return db.put(db.STORES.lessons, lesson);
 }
 
+// Salva o texto corrigido de um trecho da transcrição.
+export async function salvarTextoSegmento(lessonId, index, novoTexto) {
+  const seg = await db.get(db.STORES.segments, [lessonId, index]);
+  if (!seg) return null;
+  seg.text = novoTexto;
+  seg.editado = true;
+  await db.put(db.STORES.segments, seg);
+  return seg;
+}
+
 export async function apagarAula(lessonId) {
   await db.delByIndex(db.STORES.segments, 'lessonId', lessonId);
   await db.delByIndex(db.STORES.terms, 'lessonId', lessonId);

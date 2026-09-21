@@ -92,6 +92,15 @@ try {
   checar('mostra "O que a aula disse"', (await page.textContent('.lado-aula')).includes('O que a aula disse'));
   await page.click('.modal-topo button');
 
+  // Corrige um trecho da transcrição (Fase A).
+  await page.hover('.transcricao .seg:first-child');
+  await page.click('.transcricao .seg:first-child .seg-editar');
+  await page.fill('.transcricao .seg:first-child .seg-edicao', 'Texto corrigido pelo teste.');
+  await page.click('.transcricao .seg:first-child .seg-edicao-acoes button:has-text("salvar")');
+  await page.waitForTimeout(300);
+  const textoCorrigido = await page.textContent('.transcricao .seg:first-child .seg-texto');
+  checar('correção de trecho é salva', textoCorrigido === 'Texto corrigido pelo teste.');
+
   // Volta e cria uma matéria.
   await page.goto(base + '/', { waitUntil: 'load' });
   await page.waitForSelector('.marca-nome', { timeout: 15000 });

@@ -65,6 +65,57 @@ export async function exportarBackup(opcoes = {}) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+  if (opcoes.incluirAudios !== false) await marcarBackupFeito(dados.lessons.length);
+  return { aulas: dados.lessons.length };
+}
+
+// ---- Controle de "quando foi o último backup" (para lembrar você) ----
+
+export async function marcarBackupFeito(qtdAulas) {
+  await db.put(db.STORES.meta, { key: 'ultimoBackup', at: new Date().toISOString(), aulas: qtdAulas || 0 });
+}
+
+export async function estadoBackup() {
+  const meta = await db.get(db.STORES.meta, 'ultimoBackup');
+  const aulas = await db.getAll(db.STORES.lessons);
+  const totalAulas = aulas.length;
+  if (!meta) return { nunca: true, totalAulas, diasDesde: null, aulasDesde: totalAulas };
+  const diasDesde = Math.floor((Date.now() - new Date(meta.at).getTime()) / 86400000);
+  const aulasDesde = Math.max(0, totalAulas - (meta.aulas || 0));
+  return { nunca: false, totalAulas, diasDesde, aulasDesde, ultimoBackup: meta.at };
+}
+
+// ---- Salvar backup direto numa pasta do computador (Chrome/Edge) ----
+
+export function suportaPastaBackup() {
+  return typeof window !== 'undefined' && 'showDirectoryPicker' in window;
+}
+
+export async function escolherPastaBackup() {
+  if (!suportaPastaBackup()) throw new Error('Este navegador não permite salvar direto numa pasta. Use "Baixar backup".');
+  const handle = await window.showDirectoryPicker({ mode: 'readwrite', id: 'kestlerium-backup' });
+  await db.put(db.STORES.meta, { key: 'pastaBackup', handle });
+  return handle;
+}
+
+export async function temPastaBackup() {
+  const rec = await db.get(db.STORES.meta, 'pastaBackup');
+  return !!(rec && rec.handle);
+}
+
+export async function salvarBackupNaPasta(opcoes = {}) {
+  const rec = await db.get(db.STORES.meta, 'pastaBackup');
+  if (!rec || !rec.handle) throw new Error('Nenhuma pasta escolhida ainda.');
+  const dir = rec.handle;
+  const perm = await dir.requestPermission({ mode: 'readwrite' });
+  if (perm !== 'granted') throw new Error('Permissão para escrever na pasta foi negada.');
+  const dados = await montarBackup({ incluirAudios: opcoes.incluirAudios !== false, onProgress: opcoes.onProgress });
+  const dia = new Date().toISOString().slice(0, 10);
+  const arq = await dir.getFileHandle(`kestlerium-backup-${dia}.json`, { create: true });
+  const escritor = await arq.createWritable();
+  await escritor.write(JSON.stringify(dados));
+  await escritor.close();
+  await marcarBackupFeito(dados.lessons.length);
   return { aulas: dados.lessons.length };
 }
 

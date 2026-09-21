@@ -5,7 +5,7 @@ import * as lessons from './lessons.js';
 import * as db from './db.js';
 import { formatTime, escapeHtml, humanDuration, makeId, normalize } from './format.js';
 import { searchSegments, segmentIndexAtTime, highlight } from './search.js';
-import { mergeTerms } from './entities.js';
+import { mergeTerms, suggestMerges } from './entities.js';
 import { researchTerm, resolveOption } from './research.js';
 import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
 import { MODELS, IDIOMAS } from './config.js';
@@ -68,19 +68,44 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   ]);
   container.appendChild(layout);
 
-  // Monta os trechos clicáveis.
+  // Monta os trechos clicáveis (e editáveis, para corrigir erros).
   const segEls = [];
   for (const s of segs) {
+    const texto = el('span', { class: 'seg-texto' }, s.text);
+    const editar = el('button', {
+      class: 'seg-editar', title: 'Corrigir este trecho', 'aria-label': 'Corrigir este trecho',
+      onclick: (e) => { e.stopPropagation(); abrirEdicao(s, t, texto); },
+    }, '✎');
     const t = el('div', {
       class: 'seg', role: 'listitem', 'data-start': s.start, tabindex: '0',
       onclick: () => irPara(s.start),
       onkeydown: (e) => { if (e.key === 'Enter') irPara(s.start); },
     }, [
       el('span', { class: 'seg-tempo' }, formatTime(s.start)),
-      el('span', { class: 'seg-texto' }, s.text),
+      texto,
+      editar,
     ]);
     segEls.push(t);
     transcricao.appendChild(t);
+  }
+
+  function abrirEdicao(s, segEl, textoEl) {
+    if (segEl.querySelector('.seg-edicao')) return;
+    const area = el('textarea', { class: 'seg-edicao', rows: '2' });
+    area.value = s.text;
+    const salvar = el('button', { class: 'btn-mini', onclick: async (e) => {
+      e.stopPropagation();
+      const novo = area.value.trim();
+      await lessons.salvarTextoSegmento(lessonId, s.index, novo);
+      s.text = novo; textoEl.textContent = novo;
+      caixa.remove(); textoEl.style.display = '';
+      toast('Trecho corrigido.', 'sucesso');
+    } }, 'salvar');
+    const cancelar = el('button', { class: 'btn-mini', onclick: (e) => { e.stopPropagation(); caixa.remove(); textoEl.style.display = ''; } }, 'cancelar');
+    const caixa = el('div', { class: 'seg-edicao-caixa', onclick: (e) => e.stopPropagation() }, [area, el('div', { class: 'seg-edicao-acoes' }, [salvar, cancelar])]);
+    textoEl.style.display = 'none';
+    textoEl.after(caixa);
+    setTimeout(() => area.focus(), 30);
   }
 
   function irPara(segundos) {
@@ -224,11 +249,37 @@ async function painelTermos(lesson, segs, audio, ctx) {
 
   const lista = el('div', { class: 'lista-termos' });
   const acoes = el('div', { class: 'acoes-termos' });
+  const sugestoesMerge = el('div', { class: 'sugestoes-merge' });
   box.appendChild(acoes);
+  box.appendChild(sugestoesMerge);
   box.appendChild(lista);
 
   let termos = await lessons.gerarTermos(lesson.id);
   let mergeSource = null;
+
+  function pintarSugestoes() {
+    sugestoesMerge.innerHTML = '';
+    const sugs = suggestMerges(termos).slice(0, 6);
+    if (!sugs.length) return;
+    sugestoesMerge.appendChild(el('p', { class: 'dica' }, 'Talvez sejam o mesmo termo. Quer juntar?'));
+    for (const sug of sugs) {
+      sugestoesMerge.appendChild(el('div', { class: 'sugestao-merge' }, [
+        el('span', {}, `${sug.menor.name} + ${sug.maior.name}`),
+        el('button', { class: 'btn-mini', onclick: () => aplicarMerge(sug) }, 'juntar'),
+        el('button', { class: 'btn-mini', onclick: () => { sug._ignorado = true; sugestoesMerge.querySelector('.sugestao-merge')?.remove(); pintarSugestoes(); }, title: 'Dispensar' }, 'não'),
+      ]));
+    }
+  }
+  async function aplicarMerge(sug) {
+    const unido = mergeTerms(sug.maior, sug.menor, sug.maior.name);
+    unido.lessonId = lesson.id; unido.manual = true;
+    await lessons.apagarTermo(lesson.id, sug.menor.id);
+    await lessons.salvarTermo(unido);
+    termos = termos.filter((x) => x.id !== sug.menor.id && x.id !== sug.maior.id);
+    termos.push(unido); termos.sort((a, b) => b.count - a.count);
+    pintarLista(); pintarSugestoes();
+    toast('Termos juntados.', 'sucesso');
+  }
 
   const btnAdicionar = el('button', { class: 'btn-mini', onclick: adicionar }, '+ adicionar termo');
   const btnRefazer = el('button', { class: 'btn-mini', title: 'Recalcula os termos a partir da transcrição (descarta suas correções)', onclick: refazer }, '↻ refazer automático');
@@ -320,6 +371,7 @@ async function painelTermos(lesson, segs, audio, ctx) {
   function abrirPesquisa(t) { modalPesquisa(t, segs, irPara); }
 
   pintarLista();
+  pintarSugestoes();
   return box;
 }
 
