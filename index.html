@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kestlerium — suas aulas viram estudo</title>
+  <meta name="description" content="Transcreva aulas em áudio e monte sua biblioteca de estudos, tudo dentro do navegador.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/app.css">
+  <!-- Habilita o modo rápido de transcrição (isolamento cross-origin) no GitHub Pages.
+       Precisa ficar na raiz do site para controlar todas as páginas. -->
+  <script src="coi-serviceworker.js"></script>
+</head>
+<body>
+  <header id="cabecalho" class="cabecalho"></header>
+  <main id="app" class="app" role="main"></main>
+  <footer class="rodape">
+    <p>Kestlerium · tudo roda no seu navegador · seus áudios não saem do seu computador.</p>
+  </footer>
+  <script type="module" src="js/main.js"></script>
+  <noscript>
+    <p style="padding:20px">O Kestlerium precisa de JavaScript ativado para funcionar.</p>
+  </noscript>
+</body>
+</html>

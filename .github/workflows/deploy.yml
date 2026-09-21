@@ -1,0 +1,40 @@
+# Publica o Kestlerium no GitHub Pages automaticamente a cada push na branch main.
+# O site é 100% estático, então não há "build": apenas enviamos os arquivos.
+name: Publicar no GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}   # permite publicar manualmente pelo botão do GitHub
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Garante uma publicação por vez.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar o GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Empacotar os arquivos do site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4

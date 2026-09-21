@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>Verificação Whisper</title></head>
+<body>
+<pre id="log">iniciando…</pre>
+<pre id="resultado"></pre>
+<script type="module">
+import { decodeToMono16k, planChunks } from '../js/audio.js';
+const log = (m) => { document.getElementById('log').textContent += '\n' + m; };
+const params = new URLSearchParams(location.search);
+const modelId = params.get('model') || 'Xenova/whisper-tiny';
+const fixture = params.get('audio') || '/fixture.mp3';
+
+async function main() {
+  const t0 = performance.now();
+  log('baixando áudio: ' + fixture);
+  const blob = await (await fetch(fixture)).blob();
+  log('decodificando áudio…');
+  let { samples, sampleRate, duration } = await decodeToMono16k(blob);
+  log(`áudio completo: ${duration.toFixed(1)}s, ${sampleRate}Hz`);
+  const maxSec = Number(params.get('maxSec') || 0);
+  if (maxSec > 0 && samples.length > maxSec * sampleRate) {
+    samples = samples.subarray(0, Math.floor(maxSec * sampleRate));
+    duration = maxSec;
+    log(`transcrevendo só os primeiros ${maxSec}s`);
+  }
+  const chunks = planChunks(samples.length, sampleRate, 30, 1);
+  log(`blocos: ${chunks.length}`);
+
+  const worker = new Worker(new URL('../js/worker.js', import.meta.url), { type: 'module' });
+  const ask = (msg, matchType, transfer) => new Promise((res, rej) => {
+    const on = (e) => { const d = e.data;
+      if (d.type === matchType) { worker.removeEventListener('message', on); res(d); }
+      else if (d.type === 'error') { worker.removeEventListener('message', on); rej(new Error(d.message)); }
+      else if (d.type === 'model-progress') log('  baixando modelo: ' + Math.round(d.progress) + '%');
+      else if (d.type === 'ready') log('  dispositivo: ' + d.device);
+    };
+    worker.addEventListener('message', on); worker.postMessage(msg, transfer || []);
+  });
+
+  const tModelo = performance.now();
+  log('carregando modelo: ' + modelId);
+  const ready = await ask({ type: 'init', modelId }, 'ready');
+  const dtModelo = (performance.now() - tModelo) / 1000;
+  log(`modelo carregado em ${dtModelo.toFixed(1)}s (${ready.device})`);
+
+  const tInfer = performance.now();
+  let texto = '';
+  for (let i = 0; i < chunks.length; i++) {
+    const c = chunks[i];
+    const copy = new Float32Array(samples.subarray(c.startSample, c.endSample));
+    const r = await ask({ type: 'transcribe-chunk', chunkIndex: i, modelId, language: 'portuguese', samples: copy, startSec: c.startSec }, 'chunk-done', [copy.buffer]);
+    for (const s of r.segments) texto += s.text + ' ';
+    log(`bloco ${i + 1}/${chunks.length} pronto`);
+  }
+  const dtInfer = (performance.now() - tInfer) / 1000;
+  const ratio = dtInfer / duration;
+  const saida = {
+    ok: true, device: ready.device, duracaoAudio: +duration.toFixed(1),
+    tempoModeloS: +dtModelo.toFixed(1), tempoTranscricaoS: +dtInfer.toFixed(1),
+    razao: +ratio.toFixed(2), texto: texto.trim(),
+  };
+  document.getElementById('resultado').textContent = 'RESULTADO_JSON:' + JSON.stringify(saida);
+  log(`\nTranscrição (${dtInfer.toFixed(1)}s, ${ratio.toFixed(2)}x a duração):\n${texto.trim()}`);
+}
+main().catch((e) => { document.getElementById('resultado').textContent = 'RESULTADO_JSON:' + JSON.stringify({ ok: false, erro: String(e && e.message || e) }); log('ERRO: ' + e.message); });
+</script>
+</body></html>
