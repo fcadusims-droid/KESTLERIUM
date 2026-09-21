@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chapterize, keyTerms, makeTermHighlighter } from '../js/study.js';
+import { chapterize, keyTerms, makeTermHighlighter, makeCloze, gerarAtividades } from '../js/study.js';
 
 function seg(index, start, text) {
   return { lessonId: 'a', index, start, end: start + 10, text };
@@ -65,4 +65,31 @@ test('makeTermHighlighter escapa HTML perigoso', () => {
   const out = hl('<script>alerta</script> teste');
   assert.ok(!out.includes('<script>'));
   assert.match(out, /hl-nome">teste/);
+});
+
+test('makeCloze cria lacuna a partir de frase real', () => {
+  const frase = { text: 'A Revolução Francesa começou em 1789.', start: 12 };
+  const terms = [{ name: 'Revolução Francesa', norm: 'revolucao francesa', kind: 'nome', count: 3 }];
+  const c = makeCloze(frase, terms);
+  assert.ok(c, 'deveria gerar cloze');
+  assert.match(c.pergunta, /_____/);
+  assert.equal(c.resposta, 'Revolução Francesa');
+  assert.equal(c.start, 12);
+});
+
+test('makeCloze devolve null se nenhum termo aparece na frase', () => {
+  const frase = { text: 'Uma frase qualquer sem termos.', start: 0 };
+  assert.equal(makeCloze(frase, [{ name: 'Napoleão', norm: 'napoleao', kind: 'nome', count: 2 }]), null);
+});
+
+test('gerarAtividades cobre todos os capítulos com tipos válidos', () => {
+  const caps = [
+    { titulo: 'A', fraseChave: { text: 'A Revolução Francesa começou.', start: 0 }, startSec: 0, endSec: 10 },
+    { titulo: 'B', fraseChave: { text: 'Sem termos aqui.', start: 10 }, startSec: 10, endSec: 20 },
+  ];
+  const terms = [{ name: 'Revolução Francesa', norm: 'revolucao francesa', kind: 'nome', count: 3 }];
+  const ativs = gerarAtividades(caps, terms);
+  assert.equal(ativs.length, 2);
+  const validos = ['recuperacao', 'pergunta', 'previsao', 'autoexplicacao'];
+  for (const a of ativs) assert.ok(validos.includes(a.tipo));
 });

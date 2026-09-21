@@ -90,6 +90,44 @@ export function keyTerms(terms, n = 8) {
     }));
 }
 
+// Monta uma pergunta de LACUNA a partir de uma frase real da aula: tira um termo
+// e pede para completar. É fundamentado — a frase e a resposta são da aula.
+// Devolve { pergunta, resposta, start } ou null se não der.
+export function makeCloze(frase, terms, start = 0) {
+  const texto = String(frase.text != null ? frase.text : frase || '');
+  const inicio = frase.start != null ? frase.start : start;
+  const candidatos = (terms || [])
+    .filter((t) => !t.hidden && t.kind !== 'data' && t.name && t.name.length >= 4)
+    .sort((a, b) => (b.count || 0) - (a.count || 0));
+  for (const t of candidatos) {
+    const re = new RegExp(escapeRegExp(t.name), 'i');
+    if (re.test(texto)) {
+      return {
+        pergunta: texto.replace(re, '_____'),
+        resposta: t.name,
+        start: inicio,
+      };
+    }
+  }
+  return null;
+}
+
+// Monta a lista de atividades do "estudo guiado", uma por capítulo.
+// Alterna entre recuperar de memória, prever, responder uma lacuna e
+// autoexplicar. A lacuna só entra quando dá para montar de uma frase real.
+export function gerarAtividades(capitulos, terms) {
+  const ciclo = ['recuperacao', 'pergunta', 'previsao', 'autoexplicacao'];
+  return (capitulos || []).map((c, i) => {
+    let tipo = ciclo[i % ciclo.length];
+    let cloze = null;
+    if (tipo === 'pergunta') {
+      cloze = makeCloze(c.fraseChave, terms);
+      if (!cloze) tipo = 'recuperacao';
+    }
+    return { capIndex: i, tipo, cloze, titulo: c.titulo, endSec: c.endSec, startSec: c.startSec };
+  });
+}
+
 // Cria uma função que destaca (com cor por tipo) os termos dentro de um texto.
 // Recebe texto CRU e devolve HTML seguro. É fundamentado: só marca termos que
 // realmente existem na lista de termos daquela aula.

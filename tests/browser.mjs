@@ -52,9 +52,22 @@ try {
   await page.goto(base + '/', { waitUntil: 'load' });
   await page.waitForSelector('.marca-nome', { timeout: 15000 });
   const okInsert = await page.evaluate(async () => {
+    // Cria um WAV silencioso de ~20s para o áudio de teste (permite testar o estudo guiado).
+    const makeWav = (segundos, rate = 8000) => {
+      const n = segundos * rate;
+      const buf = new ArrayBuffer(44 + n);
+      const dv = new DataView(buf);
+      const ws = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+      ws(0, 'RIFF'); dv.setUint32(4, 36 + n, true); ws(8, 'WAVE'); ws(12, 'fmt ');
+      dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+      dv.setUint32(24, rate, true); dv.setUint32(28, rate, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true);
+      ws(36, 'data'); dv.setUint32(40, n, true);
+      for (let i = 0; i < n; i++) dv.setUint8(44 + i, 128);
+      return new Blob([buf], { type: 'audio/wav' });
+    };
     const abrir = () => new Promise((res, rej) => { const r = indexedDB.open('kestlerium', 1); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
     const db = await abrir();
-    const tx = db.transaction(['lessons', 'segments'], 'readwrite');
+    const tx = db.transaction(['lessons', 'segments', 'audio'], 'readwrite');
     tx.objectStore('lessons').put({ id: 'aula_test', title: 'Aula de Teste', subjectId: null, status: 'done', progress: 1, duration: 20, modelKey: 'base', language: 'portuguese', chunksDone: [0], chunksTotal: 1, createdAt: new Date().toISOString() });
     const segs = [
       { lessonId: 'aula_test', index: 0, start: 0, end: 6, text: 'A Revolução Francesa começou em 1789.' },
@@ -62,6 +75,7 @@ try {
       { lessonId: 'aula_test', index: 2, start: 12, end: 18, text: 'A revolução mudou toda a Europa daquela época.' },
     ];
     for (const s of segs) tx.objectStore('segments').put(s);
+    tx.objectStore('audio').put({ lessonId: 'aula_test', blob: makeWav(20), fileName: 'teste.wav', type: 'audio/wav' });
     await new Promise((res) => { tx.oncomplete = res; });
     return true;
   });
@@ -95,6 +109,21 @@ try {
   await page.click('.barra-estudo button:has-text("Modo foco")');
   checar('modo foco é ativado', await page.isVisible('.aula-layout.foco'));
   await page.click('.barra-estudo button:has-text("Modo foco")');
+
+  // Fase C: estudo guiado — inicia e simula chegar ao fim do capítulo.
+  await page.waitForFunction(() => { const a = document.querySelector('audio.player'); return a && !Number.isNaN(a.duration) && a.duration > 15; }, undefined, { timeout: 8000 }).catch(() => {});
+  await page.click('.barra-estudo button:has-text("Estudo guiado")');
+  await page.evaluate(async () => {
+    const audio = document.querySelector('audio.player');
+    if (audio) { audio.currentTime = 19.5; audio.dispatchEvent(new Event('timeupdate')); }
+  });
+  const apareceuCard = await page.waitForSelector('.atividade-card', { timeout: 5000 }).then(() => true).catch(() => false);
+  checar('estudo guiado mostra atividade ao fim do capítulo', apareceuCard);
+  if (apareceuCard) {
+    await page.click('.atividade-card .atividade-acoes button');
+    const fim = await page.waitForSelector('.atividade-card:has-text("Fim do estudo guiado")', { timeout: 4000 }).then(() => true).catch(() => false);
+    checar('estudo guiado chega ao fim', fim);
+  }
 
   // Abre a pesquisa de um termo (só valida que o modal abre).
   await page.click('.painel-termos .termo:first-child button:has-text("pesquisar")');

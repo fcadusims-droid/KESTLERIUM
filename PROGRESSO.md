@@ -206,3 +206,15 @@ chave) fica como opção futura, para computadores mais fortes.
 - **Modo Foco:** esconde tudo menos o player e a frase atual, para concentrar.
 - Testes: 26 de lógica (novos: capítulos, termos-chave, destaque) + 19 de
   navegador (novos: pré-treino, destaque, roteiro, modo foco).
+
+### Fase C — Modo Estudo Ativo (pronta e testada)
+
+- **Estudo guiado:** o player toca cada parte da aula e **pausa** para propor uma
+  atividade: recuperar de memória, prever o que vem, completar uma **frase da
+  própria aula** (lacuna) ou explicar com as próprias palavras. Depois continua.
+- Baseado na ciência da aprendizagem: parar para recuperar/gerar aprende muito
+  mais que só ouvir. As perguntas de lacuna são montadas de frases reais da aula
+  (fundamentado), e a resposta certa é sempre mostrada.
+- Testes: 29 de lógica (novos: lacuna e geração de atividades) e o teste de
+  navegador simula chegar ao fim de um capítulo e confirma que a atividade
+  aparece e que o estudo chega ao fim (21 verificações no total).

@@ -278,3 +278,20 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 .aula-layout.foco .seg:not(.seg-atual) { display: none; }
 .aula-layout.foco .seg-atual { font-size: 1.5rem; line-height: 1.75; padding: 30px 20px; text-align: center; background: transparent; }
 .aula-layout.foco .seg-atual .seg-tempo, .aula-layout.foco .seg-editar { display: none; }
+
+/* --- Fase C: estudo guiado --- */
+.btn-estudo { background: var(--primaria); color: #fff; border-color: var(--primaria); }
+.btn-estudo:hover { background: var(--primaria-escura); color: #fff; }
+.estudo-guiado { display: none; margin: 6px 0; }
+.estudo-guiado.ativo { display: block; }
+.atividade-card { background: var(--superficie); border: 2px solid var(--primaria); border-radius: var(--raio); padding: 16px 18px; box-shadow: var(--sombra); }
+.atividade-topo { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; }
+.atividade-progresso { font-size: .8rem; color: var(--texto-suave); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.atividade-card h4 { margin: 4px 0 6px; font-size: 1.15rem; }
+.atividade-cloze { font-size: 1.1rem; background: var(--superficie-2); padding: 10px 12px; border-radius: 8px; }
+.atividade-linha { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.atividade-linha .campo { flex: 1; min-width: 160px; }
+.atividade-revelar { margin-top: 8px; }
+.atividade-acoes { margin-top: 12px; display: flex; justify-content: flex-end; }
+.feedback-ok { color: var(--sucesso); font-weight: 700; }
+.feedback-quase { color: var(--texto); }

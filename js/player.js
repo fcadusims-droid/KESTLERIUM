@@ -6,7 +6,7 @@ import * as db from './db.js';
 import { formatTime, escapeHtml, humanDuration, makeId, normalize } from './format.js';
 import { searchSegments, segmentIndexAtTime, highlight } from './search.js';
 import { mergeTerms, suggestMerges } from './entities.js';
-import { chapterize, keyTerms, makeTermHighlighter } from './study.js';
+import { chapterize, keyTerms, makeTermHighlighter, gerarAtividades } from './study.js';
 import { researchTerm, resolveOption } from './research.js';
 import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
 import { MODELS, IDIOMAS } from './config.js';
@@ -58,6 +58,7 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   let termos = await lessons.gerarTermos(lessonId).catch(() => []);
   const highlighter = makeTermHighlighter(termos);
   const capitulos = chapterize(segs, termos);
+  const atividades = gerarAtividades(capitulos, termos);
   let destacarTermos = true;
 
   const busca = el('input', { class: 'campo', type: 'search', placeholder: 'Buscar uma palavra nesta aula…', 'aria-label': 'Buscar nesta aula' });
@@ -67,7 +68,9 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   // Barra de estudo.
   const btnDestacar = el('button', { class: 'btn-mini ativo', onclick: () => { destacarTermos = !destacarTermos; btnDestacar.classList.toggle('ativo', destacarTermos); aplicarDestaque(); } }, '🖍️ Destacar termos');
   const roteiro = construirRoteiro(capitulos, irPara);
+  const estudoGuiado = el('div', { class: 'estudo-guiado' });
   const barraEstudo = el('div', { class: 'barra-estudo' }, [
+    el('button', { class: 'btn-mini btn-estudo', onclick: () => iniciarGuiado() }, '▶️ Estudo guiado'),
     el('button', { class: 'btn-mini', onclick: () => alternarFoco() }, '🎯 Modo foco'),
     btnDestacar,
     el('button', { class: 'btn-mini', onclick: () => roteiro.classList.toggle('aberto') }, `🗺️ Roteiro (${capitulos.length})`),
@@ -78,6 +81,7 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
       el('div', { class: 'player-caixa' }, [audio]),
       construirPreTreino(termos, irPara),
       barraEstudo,
+      estudoGuiado,
       roteiro,
       el('div', { class: 'barra-busca' }, [busca]),
       resultadosBusca,
@@ -86,6 +90,60 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
     el('div', { class: 'coluna-lateral' }, [await painelTermos(lesson, segs, audio, ctx)]),
   ]);
   container.appendChild(layout);
+
+  // ---- Estudo guiado: o player pausa ao fim de cada capítulo e propõe uma
+  // atividade (recuperar, prever, responder uma lacuna, autoexplicar). ----
+  let guiado = false;
+  let capAtual = 0;
+  let aguardando = false;
+
+  function iniciarGuiado() {
+    if (!atividades.length || !audio.src) { toast('Sem áudio para o estudo guiado.', 'info'); return; }
+    guiado = true; capAtual = 0; aguardando = false;
+    estudoGuiado.classList.add('ativo');
+    toast('Estudo guiado começou. O áudio vai parar em cada parte para você pensar.', 'info', 5000);
+    audio.currentTime = Math.max(0, capitulos[0].startSec + 0.01);
+    audio.play().catch(() => {});
+  }
+  function sairGuiado() {
+    guiado = false; aguardando = false;
+    estudoGuiado.classList.remove('ativo');
+    estudoGuiado.innerHTML = '';
+  }
+  function checarLimiteGuiado() {
+    if (!guiado || aguardando) return;
+    const cap = capitulos[capAtual];
+    if (cap && audio.currentTime >= cap.endSec - 0.05) {
+      aguardando = true;
+      audio.pause();
+      mostrarAtividade(capAtual);
+    }
+  }
+  function mostrarAtividade(i) {
+    const at = atividades[i];
+    estudoGuiado.innerHTML = '';
+    estudoGuiado.appendChild(cardAtividade(at, capitulos[i], i, atividades.length, {
+      continuar: () => {
+        aguardando = false;
+        capAtual = i + 1;
+        estudoGuiado.innerHTML = '';
+        if (capAtual >= capitulos.length) {
+          estudoGuiado.appendChild(el('div', { class: 'atividade-card' }, [
+            el('h4', {}, '✅ Fim do estudo guiado'),
+            el('p', {}, 'Você percorreu a aula inteira parando para pensar em cada parte. Isso fixa muito melhor do que só ouvir.'),
+            el('button', { class: 'btn btn-secundario', onclick: () => sairGuiado() }, 'Concluir'),
+          ]));
+          guiado = false;
+          return;
+        }
+        audio.currentTime = Math.max(0, capitulos[capAtual].startSec + 0.01);
+        audio.play().catch(() => {});
+      },
+      sair: () => sairGuiado(),
+      irPara,
+    }));
+    estudoGuiado.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
 
   function alternarFoco() {
     layout.classList.toggle('foco');
@@ -150,6 +208,7 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   // Destaca o trecho atual conforme o áudio toca.
   let atual = -1;
   audio.addEventListener('timeupdate', () => {
+    checarLimiteGuiado();
     const idx = segmentIndexAtTime(segs, audio.currentTime);
     if (idx !== atual && idx >= 0) {
       if (segEls[atual]) segEls[atual].classList.remove('seg-atual');
@@ -230,6 +289,54 @@ function construirRoteiro(capitulos, irPara) {
     ]));
   });
   return box;
+}
+
+// -------- Card de atividade do estudo guiado (Fase C) --------
+function cardAtividade(at, cap, i, total, h) {
+  const card = el('div', { class: 'atividade-card' });
+  card.appendChild(el('div', { class: 'atividade-topo' }, [
+    el('span', { class: 'atividade-progresso' }, `Parte ${i + 1} de ${total}`),
+    el('button', { class: 'btn-mini', onclick: () => h.sair() }, 'sair do estudo guiado'),
+  ]));
+
+  const revelarTrecho = () => el('button', { class: 'roteiro-frase', onclick: () => h.irPara(cap.fraseChave.start) }, [
+    el('span', { class: 'aspas' }, '“'), el('span', {}, cap.fraseChave.text), el('span', { class: 'seg-tempo' }, formatTime(cap.fraseChave.start)),
+  ]);
+  const btnContinuar = el('button', { class: 'btn btn-primario', onclick: () => h.continuar() }, i + 1 >= total ? 'Finalizar' : 'Continuar ▶');
+
+  if (at.tipo === 'recuperacao') {
+    card.appendChild(el('h4', {}, '🧠 Recupere de memória'));
+    card.appendChild(el('p', {}, 'Sem olhar, tente lembrar: o que foi dito nesta parte? Diga em voz alta ou anote. Lembrar dá muito mais resultado do que reler.'));
+    const area = el('div', { class: 'atividade-revelar' });
+    card.appendChild(el('button', { class: 'btn btn-secundario', onclick: () => { area.innerHTML = ''; area.appendChild(el('p', { class: 'dica' }, 'Uma frase-chave desta parte:')); area.appendChild(revelarTrecho()); } }, 'Mostrar o trecho'));
+    card.appendChild(area);
+  } else if (at.tipo === 'previsao') {
+    card.appendChild(el('h4', {}, '🔮 Faça um palpite'));
+    card.appendChild(el('p', {}, 'O que você acha que vem a seguir? Arriscar um palpite antes de ouvir ajuda a fixar, mesmo se você errar.'));
+  } else if (at.tipo === 'pergunta' && at.cloze) {
+    card.appendChild(el('h4', {}, '✍️ Complete a frase'));
+    card.appendChild(el('p', { class: 'atividade-cloze' }, at.cloze.pergunta));
+    const input = el('input', { class: 'campo', type: 'text', placeholder: 'Sua resposta…' });
+    const feedback = el('p', { class: 'dica' });
+    const verificar = () => {
+      const acertou = normalize(input.value) && (normalize(input.value) === normalize(at.cloze.resposta) || normalize(at.cloze.resposta).includes(normalize(input.value)));
+      feedback.innerHTML = acertou ? '✅ Isso mesmo!' : `A aula usou: <strong>${escapeHtml(at.cloze.resposta)}</strong>`;
+      feedback.className = acertou ? 'feedback-ok' : 'feedback-quase';
+    };
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') verificar(); });
+    card.appendChild(el('div', { class: 'atividade-linha' }, [input, el('button', { class: 'btn btn-secundario', onclick: verificar }, 'Verificar')]));
+    card.appendChild(feedback);
+  } else {
+    card.appendChild(el('h4', {}, '🗣️ Explique com suas palavras'));
+    card.appendChild(el('p', {}, 'Explique esta parte como se ensinasse alguém. Falar com as próprias palavras revela o que você realmente entendeu.'));
+    const area = el('div', { class: 'atividade-revelar' });
+    card.appendChild(el('textarea', { class: 'campo', rows: '3', placeholder: 'Escreva sua explicação (opcional)…' }));
+    card.appendChild(el('button', { class: 'btn btn-secundario', onclick: () => { area.innerHTML = ''; area.appendChild(el('p', { class: 'dica' }, 'Confira com uma frase-chave desta parte:')); area.appendChild(revelarTrecho()); } }, 'Mostrar o trecho'));
+    card.appendChild(area);
+  }
+
+  card.appendChild(el('div', { class: 'atividade-acoes' }, [btnContinuar]));
+  return card;
 }
 
 // -------- Painel de transcrição (início/retomar/cancelar/progresso) --------
