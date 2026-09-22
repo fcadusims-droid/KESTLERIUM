@@ -73,6 +73,25 @@ Na tela inicial (**Biblioteca**) você organiza tudo em **matérias**, vê o
 
 ---
 
+## Parte 3.5 — Ferramentas de estudo ativo
+
+Na tela da aula há uma barra de estudo. Tudo é montado a partir da **própria
+aula** — o app nunca inventa conteúdo, só organiza e aponta o trecho exato.
+
+- **▶️ Estudo guiado:** o áudio para em cada parte e pede para você lembrar,
+  prever, completar uma frase ou explicar. Parar para pensar fixa muito mais do
+  que só ouvir.
+- **🗺️ Roteiro:** divide a aula em partes, cada uma com uma frase-chave da aula.
+- **🕸️ Mapa** e **📅 Linha do tempo:** diagramas automáticos; as bolinhas e as
+  datas acendem conforme o áudio fala. Clique para ir ao trecho.
+- **🖍️ Destacar termos**, **🎯 Modo foco** e **Velocidade** (com um aviso: acelerar
+  demais atrapalha a memória).
+- **🃏 Criar cartões:** gera perguntas a partir da aula. Depois use o menu
+  **Revisar** para estudar os cartões do dia (revisão espaçada: o que você sabe
+  volta mais tarde; o que erra volta logo).
+- Para **corrigir** um erro da transcrição, passe o mouse sobre o trecho e clique
+  no lápis (✎).
+
 ## Parte 4 — Backup (muito importante!)
 
 Seus dados (áudios e transcrições) ficam **só no seu navegador**. Se você limpar

@@ -246,3 +246,21 @@ da sua aula como narração):
 - Também resolve o item opcional do "grafo visual" que tinha ficado de fora.
 - Testes: 38 de lógica (novos: montar o grafo, posicionar, linha do tempo, parse
   de anos/séculos) e o navegador desenha o mapa e lista a linha do tempo.
+
+### Fase F — Ritmo e acabamento (pronta e testada)
+
+- **Controle de velocidade** do áudio (0,75x a 2x) com um **aviso** quando você
+  acelera demais (estudos de 2025 mostram que velocidade alta aumenta a carga
+  mental e piora a retenção) e botão **Repetir trecho**.
+- Ajuda e COMO-USAR atualizados com as novas ferramentas de estudo.
+- Testes finais: 38 de lógica e 27 verificações de navegador, todos passando.
+
+## Resumo do Kestlerium 2.0
+
+De uma ferramenta de transcrição/busca, o app virou uma **ferramenta de estudo
+ativo**: transcreve, organiza em capítulos, destaca termos, faz estudo guiado com
+pausas e perguntas, cartões com revisão espaçada, mapa conceitual e linha do
+tempo que acendem com o áudio — tudo **fundamentado na própria aula** (o app não
+inventa significado) e **100% no navegador, sem API paga**. A "interpretação
+avançada" com IA local (opcional, para PC forte) fica registrada como próximo
+passo possível.

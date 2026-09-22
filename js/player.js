@@ -104,9 +104,32 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
     } }, '🃏 Criar cartões'),
   ]);
 
+  // Controle de ritmo: velocidade (com aviso) e repetir o trecho atual.
+  let avisouVelocidade = false;
+  const controlesAudio = el('div', { class: 'controles-audio' }, [
+    el('span', { class: 'dica' }, 'Velocidade:'),
+    ...[0.75, 1, 1.25, 1.5, 2].map((v) => el('button', {
+      class: 'btn-mini' + (v === 1 ? ' ativo' : ''), 'data-vel': String(v),
+      onclick: () => {
+        audio.playbackRate = v;
+        controlesAudio.querySelectorAll('[data-vel]').forEach((b) => b.classList.toggle('ativo', Number(b.getAttribute('data-vel')) === v));
+        if (v > 1.25 && !avisouVelocidade) {
+          avisouVelocidade = true;
+          toast('Acelerar demais aumenta a carga mental e costuma piorar a retenção (estudos de 2025). Use com moderação em conteúdo difícil.', 'info', 6500);
+        }
+      },
+    }, `${v}x`)),
+    el('button', { class: 'btn-mini', onclick: () => repetirTrecho() }, '🔁 Repetir trecho'),
+  ]);
+  function repetirTrecho() {
+    const i = atual >= 0 ? atual : segmentIndexAtTime(segs, audio.currentTime);
+    const s = segs[i];
+    if (s) irPara(s.start);
+  }
+
   const layout = el('div', { class: 'aula-layout' }, [
     el('div', { class: 'coluna-principal' }, [
-      el('div', { class: 'player-caixa' }, [audio]),
+      el('div', { class: 'player-caixa' }, [audio, controlesAudio]),
       construirPreTreino(termos, irPara),
       barraEstudo,
       estudoGuiado,

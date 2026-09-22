@@ -118,6 +118,11 @@ try {
   await page.waitForSelector('.linha-tempo', { timeout: 4000 });
   checar('linha do tempo lista as datas', (await page.locator('.linha-evento').count()) >= 1);
 
+  // Fase F: controle de velocidade.
+  await page.click('.controles-audio button:has-text("1.5x")');
+  const vel = await page.evaluate(() => document.querySelector('audio.player').playbackRate);
+  checar('velocidade do áudio muda para 1.5x', Math.abs(vel - 1.5) < 0.01);
+
   // Fase C: estudo guiado — inicia e simula chegar ao fim do capítulo.
   await page.waitForFunction(() => { const a = document.querySelector('audio.player'); return a && !Number.isNaN(a.duration) && a.duration > 15; }, undefined, { timeout: 8000 }).catch(() => {});
   await page.click('.barra-estudo button:has-text("Estudo guiado")');

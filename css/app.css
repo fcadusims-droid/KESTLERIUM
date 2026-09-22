@@ -330,3 +330,7 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 .linha-evento.aceso { border-color: var(--primaria); background: var(--primaria-clara); }
 .linha-data { font-weight: 700; color: #6b45c9; white-space: nowrap; }
 .linha-texto { flex: 1; color: var(--texto-suave); }
+
+/* --- Fase F: controle de ritmo --- */
+.controles-audio { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.controles-audio .dica { margin: 0 4px 0 0; }
