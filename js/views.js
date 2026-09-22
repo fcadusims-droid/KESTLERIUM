@@ -6,7 +6,7 @@ import * as library from './library.js';
 import { exportarBackup, importarBackup, estadoBackup, suportaPastaBackup, escolherPastaBackup, temPastaBackup, salvarBackupNaPasta } from './backup.js';
 import { estimateStorage } from './db.js';
 import { formatTime, humanSize, humanDuration, escapeHtml, normalize } from './format.js';
-import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
+import { el, toast, confirmDialog, promptDialog, dica } from './ui.js';
 import { MODELS, DEFAULT_MODEL, IDIOMAS, DEFAULT_IDIOMA } from './config.js';
 
 const rotuloStatus = {

@@ -4,7 +4,7 @@
 // algoritmo simples do tipo SM-2. A parte de lógica é pura e testável.
 
 import * as db from './db.js';
-import { normalize, makeId } from './format.js';
+import { normalize } from './format.js';
 import { makeCloze } from './study.js';
 
 const DIA = 86400000;

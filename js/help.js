@@ -26,7 +26,7 @@ export async function renderAjuda(container) {
     'O Kestlerium destaca automaticamente nomes, conceitos e datas que apareceram na aula, com os horários. Isso é feito por regras simples, então pode errar: você pode apagar termos errados, renomear, juntar dois termos iguais ou adicionar um que faltou.'));
 
   container.appendChild(secao('Pesquisar nas fontes',
-    'Em cada termo há o botão "pesquisar". Ele consulta a Wikipédia e o Wikidata (fontes gratuitas) e mostra, lado a lado, o que a sua aula disse e o que a fonte diz, sempre com o link. O Kestlerium nunca diz se algo é "verdadeiro" ou "falso": quem confere é você.'));
+    'A pesquisa só aparece quando o professor, na fala da aula, pede para pesquisar algo ("pesquise…", "procurem…", "leiam…"). Esses momentos ficam no painel "🔎 Pesquisas pedidas", e com um clique o Kestlerium consulta a Wikipédia e o Wikidata (fontes gratuitas), mostrando lado a lado o que a aula disse e o que a fonte diz, com o link. O app nunca diz se algo é "verdadeiro" nem pesquisa por conta própria: quem confere é você.'));
 
   container.appendChild(secao('Corrigir a transcrição',
     'A transcrição pode errar. Passe o mouse sobre um trecho e clique no lápis (✎) para corrigir o texto à mão. Fica salvo.'));
@@ -49,5 +49,5 @@ export async function renderAjuda(container) {
     'A pesquisa não abre: verifique sua conexão com a internet (a pesquisa precisa de internet; a transcrição, não).',
     'Sumiu tudo: se você tinha um backup, use "Restaurar backup". Sem backup, infelizmente não há como recuperar.'));
 
-  container.appendChild(el('p', { class: 'dica' }, 'Versão da plataforma: Kestlerium 2.0 (estudo ativo).'));
+  container.appendChild(el('p', { class: 'dica' }, 'Versão da plataforma: Kestlerium 3.0 (estudo ativo e memorização).'));
 }

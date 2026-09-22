@@ -115,22 +115,23 @@ navegador. Dá para estudar tranquilamente.
   aceita ou dispensa, e busca global em todas as aulas.
 - **Fase Final — Publicação:** ✅ pronto. Deploy automático via GitHub Actions
   para o GitHub Pages, e o guia COMO-USAR.md.
-- **Grafo visual (item opcional):** ❌ não fiz. O plano dizia "só se sobrar tempo
-  e nada estiver quebrado". Preferi deixar o resto sólido. Fica como sugestão
-  futura.
+- **Grafo visual (item opcional):** ✅ feito depois (mapa de conexões e mapa
+  mental), na evolução 2.0/3.0 descrita mais abaixo.
 
 ---
 
 ## Testes automáticos que escrevi e rodei
 
-- **Testes de lógica (19 testes, todos passando):** formatação de tempo/tamanho,
-  busca (com e sem acento), extração de termos (nomes, datas, mesclagem, evitar
-  falso positivo no início de frase) e leitura das respostas da Wikipédia/Wikidata.
+- **Testes de lógica (48 testes atualmente, todos passando):** formatação,
+  busca, extração e mesclagem de termos, capítulos, cartões e agendamento,
+  diagramas, geradores de memorização, detecção de pedidos de pesquisa e de
+  perguntas/intervenções, e leitura das respostas da Wikipédia/Wikidata.
   Rodar com: `npm test`.
-- **Teste de navegador (13 verificações, todas passando):** abre o site num
-  navegador de verdade e confere o cabeçalho, o aviso de backup, a tela de ajuda,
-  a inserção no banco, a transcrição na tela, a extração de termos, a busca, o
-  modal de pesquisa e a criação de matéria. Rodar com: `node tests/browser.mjs`.
+- **Teste de navegador (35 verificações atualmente, todas passando):** abre o
+  site num navegador de verdade e confere as telas e os fluxos principais (envio,
+  transcrição na tela, termos, busca, estudo guiado, cartões/revisão, diagramas,
+  liberação progressiva, pesquisa pedida pela aula e marcação de perguntas).
+  Rodar com: `node tests/browser.mjs`.
 - **Teste real de transcrição:** o `tests/whisper-check.mjs` baixa o modelo e
   transcreve um áudio de verdade, medindo a velocidade (foi como fiz as medições
   acima).
@@ -328,3 +329,17 @@ após uma pausa maior — sinal de que outra pessoa interrompeu). Essas frases:
 - geram um aviso quando parecem existir.
 Como é um palpite pelo texto, o app avisa que pode errar e você pode corrigir
 editando o trecho. Testes: 48 de lógica e 35 de navegador.
+
+### Revisão geral do repositório
+
+Fiz uma varredura em busca de problemas e corrigi:
+- **Código morto removido:** a função de ícone de ajuda (nunca usada) e seu CSS,
+  a função `clearStore` (nunca usada) e vários imports não utilizados
+  (`makeId`, `normalize`, `humanDuration`, `escapeHtml`, `ajuda`), além de um
+  parâmetro morto em `togglePanel`.
+- **CSS repetido:** o seletor `.seg` estava duplicado; juntei.
+- **Documentos atualizados/corrigidos:** o PROGRESSO dizia que o grafo não foi
+  feito (foi, na Fase E) e citava contagens de teste antigas; o COMO-USAR, a
+  Ajuda e o README ainda descreviam a pesquisa como "botão por termo" (agora ela
+  só aparece quando a aula pede). Versão da Ajuda atualizada para 3.0.
+- Sem `console.log`/TODO soltos. Testes: 48 de lógica e 35 de navegador, verdes.

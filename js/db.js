@@ -138,15 +138,6 @@ export async function delByIndex(store, indexName, value) {
   });
 }
 
-export async function clearStore(store) {
-  const t = await tx(store, 'readwrite');
-  t.objectStore(store).clear();
-  return new Promise((resolve, reject) => {
-    t.oncomplete = () => resolve();
-    t.onerror = () => reject(t.error);
-  });
-}
-
 // Estimativa de espaço usado no navegador (para avisos de backup).
 export async function estimateStorage() {
   if (navigator.storage && navigator.storage.estimate) {

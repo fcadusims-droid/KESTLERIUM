@@ -3,7 +3,7 @@
 
 import * as lessons from './lessons.js';
 import * as db from './db.js';
-import { formatTime, escapeHtml, humanDuration, makeId, normalize } from './format.js';
+import { formatTime, escapeHtml, makeId, normalize } from './format.js';
 import { searchSegments, segmentIndexAtTime, highlight } from './search.js';
 import { mergeTerms, suggestMerges } from './entities.js';
 import { chapterize, keyTerms, makeTermHighlighter, gerarAtividades } from './study.js';
@@ -13,7 +13,7 @@ import { mindMap, acronyms, comparisons, scaffolds } from './memorize.js';
 import { annotateSpeakers, exposicao } from './speakers.js';
 import { painelMapaMental, painelSiglas, painelComparacoes, painelMnemonicos, painelAnotacoes, painelQuiz } from './studypanels.js';
 import { researchTerm, resolveOption, detectResearchRequests } from './research.js';
-import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
+import { el, toast, confirmDialog, promptDialog, dica } from './ui.js';
 import { MODELS, IDIOMAS } from './config.js';
 
 export async function renderAula(container, lessonId, ctx, seekSec = null) {
@@ -149,8 +149,8 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   ]);
 
   // Liga/desliga um painel, montando o conteúdo só na primeira vez.
-  function togglePanel(panel, montar, montarQuizFn) {
-    if (!panel.dataset.montado) { (montarQuizFn || montar)(); panel.dataset.montado = '1'; }
+  function togglePanel(panel, montar) {
+    if (!panel.dataset.montado) { montar(); panel.dataset.montado = '1'; }
     panel.classList.toggle('aberto');
   }
   async function montarQuiz() {
