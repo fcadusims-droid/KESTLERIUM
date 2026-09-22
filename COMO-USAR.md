@@ -64,9 +64,11 @@ Quando a transcrição termina, abra a aula. Você verá:
 - **Termos da aula** (na lateral): nomes, conceitos e datas encontrados, com os
   horários. Você pode **apagar** os errados, **renomear**, **mesclar** dois iguais
   e **adicionar** um que faltou.
-- **Pesquisar** (em cada termo): consulta a Wikipédia e o Wikidata e mostra, lado
-  a lado, o que a sua aula disse e o que a fonte diz, com o link. O Kestlerium
-  nunca diz se algo é "verdadeiro" — quem confere é você.
+- **Pesquisas pedidas na aula**: a pesquisa só aparece quando o professor, na
+  fala, pede para pesquisar algo ("pesquise…", "leiam…"). Aí o Kestlerium mostra
+  esses momentos e, com um clique, consulta a Wikipédia e o Wikidata — lado a
+  lado, o que a aula disse e o que a fonte diz, com o link. O app nunca diz se
+  algo é "verdadeiro" nem pesquisa por conta própria: quem confere é você.
 
 Na tela inicial (**Biblioteca**) você organiza tudo em **matérias**, vê o
 **Índice de termos** e faz **busca em todas as aulas** ao mesmo tempo.

@@ -4,7 +4,7 @@
 // A lógica é pura e testável. O desenho (SVG) e a sincronização com o áudio
 // ficam no player.
 
-import { normalize, escapeHtml } from './format.js';
+import { escapeHtml } from './format.js';
 
 // ---- Mapa conceitual ----
 // Nós = termos mais frequentes. Ligações = termos que aparecem no mesmo trecho.

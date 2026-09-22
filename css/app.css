@@ -149,7 +149,7 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 .player-caixa { position: sticky; top: 70px; z-index: 10; background: var(--fundo); padding-bottom: 8px; }
 .player { width: 100%; }
 .transcricao { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; }
-.seg { display: flex; gap: 10px; align-items: baseline; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+.seg { display: flex; gap: 10px; align-items: baseline; padding: 6px 10px; border-radius: 8px; cursor: pointer; position: relative; }
 .seg:hover { background: var(--superficie-2); }
 .seg-atual { background: var(--primaria-clara); }
 .seg-texto { color: var(--texto); }
@@ -216,7 +216,6 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 
 /* Ajuda */
 .ajuda-secao { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 16px; margin: 10px 0; }
-.ajuda { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--superficie-2); color: var(--texto-suave); font-size: .75rem; font-weight: 700; cursor: help; margin-left: 4px; }
 
 /* Toast */
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(120%); background: #222; color: #fff; padding: 12px 18px; border-radius: 999px; box-shadow: var(--sombra); z-index: 200; opacity: 0; transition: transform .3s, opacity .3s; max-width: 90vw; }
@@ -226,7 +225,6 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 .toast-info { background: #333; }
 
 /* --- Fase A: edição de trecho, sugestões de mesclagem, backup --- */
-.seg { position: relative; }
 .seg-editar { opacity: 0; border: none; background: transparent; cursor: pointer; color: var(--texto-suave); font-size: .9rem; padding: 0 4px; }
 .seg:hover .seg-editar, .seg:focus-within .seg-editar { opacity: 1; }
 .seg-editar:hover { color: var(--primaria); }

@@ -74,11 +74,6 @@ export function promptDialog(mensagem, valorInicial = '', { okText = 'Salvar' } 
   });
 }
 
-// Pequeno ícone de ajuda com texto explicativo ao passar o mouse.
-export function ajuda(texto) {
-  return el('span', { class: 'ajuda', title: texto, 'aria-label': texto, tabindex: '0' }, '?');
-}
-
 // Bloco de texto de ajuda (dica) que aparece sob um título.
 export function dica(texto) {
   return el('p', { class: 'dica' }, texto);

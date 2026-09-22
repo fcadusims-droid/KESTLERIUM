@@ -3,7 +3,7 @@
 // se acertou. O app reagenda cada cartão para o melhor momento de rever.
 
 import * as cards from './cards.js';
-import { formatTime, escapeHtml } from './format.js';
+import { formatTime } from './format.js';
 import { el } from './ui.js';
 
 const rotuloTipo = { cloze: 'complete a frase', termo: 'conceito', data: 'data' };

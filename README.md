@@ -10,8 +10,15 @@ Envie o MP3 de uma aula de qualquer matéria e o Kestlerium:
   áudio pula para lá);
 - permite **buscar** trechos por texto, com horários clicáveis;
 - extrai **termos, nomes e datas** com os horários onde aparecem;
-- oferece **pesquisa** em fontes gratuitas (Wikipédia e Wikidata), mostrando lado
-  a lado o que a aula disse e o que a fonte diz — sem julgar verdadeiro/falso;
+- prepara **material de estudo automático** a partir da própria aula: capítulos,
+  mapa mental e de conexões, linha do tempo, siglas, comparações, **estudo
+  guiado** (com pausas e perguntas), **cartões com revisão espaçada** e quiz —
+  liberados conforme você avança no áudio;
+- detecta **perguntas/intervenções** de outras pessoas (pelo texto e pausas) e as
+  mantém fora do material de estudo;
+- oferece **pesquisa** em fontes gratuitas (Wikipédia e Wikidata) **quando a
+  própria aula pede** ("pesquise…"), mostrando lado a lado o que a aula disse e o
+  que a fonte diz — sem julgar verdadeiro/falso;
 - organiza tudo numa **biblioteca** de matérias, com busca global e árvore de
   estudo.
 
