@@ -5,6 +5,8 @@ import * as lessons from './lessons.js';
 import { TranscriptionJob } from './transcriber.js';
 import { renderAula } from './player.js';
 import { renderBiblioteca, renderTermoGlobal, renderIndiceTermos } from './views.js';
+import { renderRevisao } from './review.js';
+import { contarVencidos } from './cards.js';
 import { renderAjuda } from './help.js';
 import { el, toast } from './ui.js';
 
@@ -72,6 +74,7 @@ const ctx = {
   cancelarTranscricao,
   estadoJob,
   assinarJob,
+  atualizarContadores,
 };
 
 function parseHash() {
@@ -85,12 +88,14 @@ function parseHash() {
 async function rotear() {
   limparTela();
   marcarNavAtiva();
+  atualizarContadores();
   const { partes, params } = parseHash();
   try {
     if (!partes.length) return void renderBiblioteca(app, ctx);
     if (partes[0] === 'aula') return void renderAula(app, decodeURIComponent(partes[1] || ''), ctx, params.get('t') ? Number(params.get('t')) : null);
     if (partes[0] === 'termos') return void renderIndiceTermos(app, ctx);
     if (partes[0] === 'termo') return void renderTermoGlobal(app, decodeURIComponent(partes[1] || ''), ctx);
+    if (partes[0] === 'revisar') return void renderRevisao(app, ctx);
     if (partes[0] === 'ajuda') return void renderAjuda(app, ctx);
     renderBiblioteca(app, ctx);
   } catch (err) {
@@ -126,9 +131,21 @@ function montarCabecalho() {
     el('nav', { class: 'nav' }, [
       el('a', { class: 'nav-link', href: '#/' }, 'Biblioteca'),
       el('a', { class: 'nav-link', href: '#/termos' }, 'Termos'),
+      el('a', { class: 'nav-link', id: 'nav-revisar', href: '#/revisar' }, 'Revisar'),
       el('a', { class: 'nav-link', href: '#/ajuda' }, 'Ajuda'),
     ]),
   ]));
+}
+
+async function atualizarContadores() {
+  try {
+    const n = await contarVencidos();
+    const link = document.getElementById('nav-revisar');
+    if (link) {
+      link.textContent = n > 0 ? `Revisar (${n})` : 'Revisar';
+      link.classList.toggle('tem-pendencia', n > 0);
+    }
+  } catch { /* ignora */ }
 }
 
 async function iniciar() {

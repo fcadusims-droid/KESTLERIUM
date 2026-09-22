@@ -209,6 +209,45 @@ export function extractTerms(segments) {
   return terms;
 }
 
+// Sugere pares de termos que provavelmente são a mesma coisa, para você mesclar.
+// Ex.: "Napoleão" e "Napoleão Bonaparte" (um é parte do outro, palavra a palavra).
+// Função pura e testável. Devolve [{ menor, maior, motivo }].
+export function suggestMerges(terms) {
+  const visiveis = (terms || []).filter((t) => !t.hidden && t.kind !== 'data' && t.norm);
+  const sugestoes = [];
+  const jaSugerido = new Set();
+  for (let i = 0; i < visiveis.length; i++) {
+    for (let j = 0; j < visiveis.length; j++) {
+      if (i === j) continue;
+      const a = visiveis[i];
+      const b = visiveis[j];
+      const tokensA = a.norm.split(/\s+/).filter(Boolean);
+      const tokensB = b.norm.split(/\s+/).filter(Boolean);
+      if (tokensA.length >= tokensB.length) continue; // "a" precisa ser o menor
+      // Todos os tokens do menor aparecem no maior, na mesma ordem contígua?
+      if (!contemSequencia(tokensB, tokensA)) continue;
+      // Evita mesclar palavras únicas muito curtas (ex.: "rei" dentro de "rei sol").
+      if (tokensA.length === 1 && tokensA[0].length < 4) continue;
+      const chave = [a.norm, b.norm].sort().join('|');
+      if (jaSugerido.has(chave)) continue;
+      jaSugerido.add(chave);
+      sugestoes.push({ menor: a, maior: b, motivo: `"${a.name}" faz parte de "${b.name}"` });
+    }
+  }
+  return sugestoes;
+}
+
+// Verifica se a sequência "peq" aparece contígua dentro de "grande".
+function contemSequencia(grande, peq) {
+  if (peq.length > grande.length) return false;
+  for (let i = 0; i + peq.length <= grande.length; i++) {
+    let ok = true;
+    for (let k = 0; k < peq.length; k++) { if (grande[i + k] !== peq[k]) { ok = false; break; } }
+    if (ok) return true;
+  }
+  return false;
+}
+
 // Junta dois termos num só (mesclar duplicatas). Retorna novo termo.
 export function mergeTerms(a, b, newName) {
   const occurrences = [...a.occurrences, ...b.occurrences]

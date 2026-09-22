@@ -161,3 +161,106 @@ navegador. Dá para estudar tranquilamente.
 - Ativar o GitHub Pages no modo "GitHub Actions" (o passo a passo está no
   COMO-USAR.md). Você disse que já preparou o repositório para Actions — ótimo.
 - Enviar suas aulas e, principalmente, **fazer backup de vez em quando.**
+
+---
+
+## Atualização — Kestlerium 2.0 (Estudo Ativo)
+
+A pedido, comecei a transformar o app numa ferramenta de estudo ativo baseada
+na ciência da aprendizagem multimídia, e a resolver as limitações registradas.
+Reforço importante: **o "narrador" do estudo é sempre a voz da própria aula que
+você enviou** — todo o app é construído em volta dela. O que ficou de fora é
+apenas *inventar* um narrador/professor que não existe.
+
+### Fase A — Correções das limitações (pronta e testada)
+
+- **Transcrição editável:** agora dá para corrigir o texto de qualquer trecho à
+  mão (resolve a limitação dos erros de reconhecimento). O trecho corrigido fica
+  marcado e é salvo no navegador.
+- **Sugestão de mesclagem de termos (correferência):** o app sugere juntar termos
+  que provavelmente são o mesmo (ex.: "Napoleão" e "Napoleão Bonaparte"), com um
+  clique. Resolve a limitação da falta de correferência.
+- **Backup mais seguro:** o app agora lembra quando foi seu último backup e mostra
+  um aviso mais forte (vermelho) quando faz tempo ou você adicionou várias aulas.
+  Em Chrome/Edge, dá para **escolher uma pasta** e salvar o backup direto nela.
+- Testes: 21 testes de lógica + 14 verificações de navegador, todos passando
+  (incluindo um teste que corrige um trecho e confere que foi salvo).
+
+### Princípio central: "fundamentado, nunca inventado"
+
+A pedido seu (a interpretação não pode ser fraca a ponto de estragar um estudo),
+o app segue uma regra de segurança: **ele nunca inventa significado**. Todo
+resumo, termo, destaque ou capítulo aponta para uma **frase real da aula, com o
+horário**. Quem interpreta é você; o app organiza e leva você ao trecho exato.
+Uma "interpretação avançada" com IA rodando no próprio navegador (grátis, sem
+chave) fica como opção futura, para computadores mais fortes.
+
+### Fase B — Sinalização, Modo Foco e Estrutura (pronta e testada)
+
+- **Destaque de termos no texto**, com cores por tipo (nome, data, conceito),
+  para o olho ir direto ao que importa (princípio de sinalização/cueing).
+- **Pré-treinamento:** antes de ouvir, o app mostra os termos-chave da aula
+  (com o horário de onde aparecem) para você conhecer o vocabulário.
+- **Roteiro automático (capítulos):** a aula é dividida em partes; cada parte
+  mostra uma frase da PRÓPRIA aula (com horário) — nada de resumo inventado.
+- **Modo Foco:** esconde tudo menos o player e a frase atual, para concentrar.
+- Testes: 26 de lógica (novos: capítulos, termos-chave, destaque) + 19 de
+  navegador (novos: pré-treino, destaque, roteiro, modo foco).
+
+### Fase C — Modo Estudo Ativo (pronta e testada)
+
+- **Estudo guiado:** o player toca cada parte da aula e **pausa** para propor uma
+  atividade: recuperar de memória, prever o que vem, completar uma **frase da
+  própria aula** (lacuna) ou explicar com as próprias palavras. Depois continua.
+- Baseado na ciência da aprendizagem: parar para recuperar/gerar aprende muito
+  mais que só ouvir. As perguntas de lacuna são montadas de frases reais da aula
+  (fundamentado), e a resposta certa é sempre mostrada.
+- Testes: 29 de lógica (novos: lacuna e geração de atividades) e o teste de
+  navegador simula chegar ao fim de um capítulo e confirma que a atividade
+  aparece e que o estudo chega ao fim (21 verificações no total).
+
+### Fase D — Cartões e Revisão Espaçada (pronta e testada)
+
+- **Criar cartões:** a partir de uma aula, o app gera cartões (flashcards)
+  fundamentados: lacunas de frases reais, "o que a aula diz sobre X" (com a frase
+  onde aparece) e datas. A resposta é sempre uma frase da própria aula, com o
+  horário para reouvir.
+- **Revisão espaçada:** uma tela "Revisar" mostra os cartões vencidos; você tenta
+  lembrar, revela a resposta e diz se acertou (Errei/Difícil/Bom/Fácil). O app
+  reagenda cada cartão (algoritmo tipo SM-2): o que você sabe volta mais tarde, o
+  que você erra volta logo. O menu mostra quantos cartões estão para revisar.
+- Os cartões entram no backup. Testes: 33 de lógica (novos: geração e
+  agendamento) e o navegador cria cartões, revela e avalia (24 verificações).
+
+### Fase E — Mapa Conceitual e Linha do Tempo (pronta e testada)
+
+Aqui entram os "diagramas automáticos" que você sugeriu, montados da própria aula
+e **sincronizados com o áudio** (o "narração + gráficos" da ciência, usando a voz
+da sua aula como narração):
+
+- **Mapa conceitual:** um grafo onde os termos aparecem ligados quando são ditos
+  no mesmo trecho. As bolinhas **acendem conforme o áudio fala**; clicar numa leva
+  ao ponto da aula onde ela aparece.
+- **Linha do tempo:** as datas encontradas na aula, em ordem, cada uma com uma
+  frase real da aula e o horário. O evento acende quando o áudio chega nele.
+- Também resolve o item opcional do "grafo visual" que tinha ficado de fora.
+- Testes: 38 de lógica (novos: montar o grafo, posicionar, linha do tempo, parse
+  de anos/séculos) e o navegador desenha o mapa e lista a linha do tempo.
+
+### Fase F — Ritmo e acabamento (pronta e testada)
+
+- **Controle de velocidade** do áudio (0,75x a 2x) com um **aviso** quando você
+  acelera demais (estudos de 2025 mostram que velocidade alta aumenta a carga
+  mental e piora a retenção) e botão **Repetir trecho**.
+- Ajuda e COMO-USAR atualizados com as novas ferramentas de estudo.
+- Testes finais: 38 de lógica e 27 verificações de navegador, todos passando.
+
+## Resumo do Kestlerium 2.0
+
+De uma ferramenta de transcrição/busca, o app virou uma **ferramenta de estudo
+ativo**: transcreve, organiza em capítulos, destaca termos, faz estudo guiado com
+pausas e perguntas, cartões com revisão espaçada, mapa conceitual e linha do
+tempo que acendem com o áudio — tudo **fundamentado na própria aula** (o app não
+inventa significado) e **100% no navegador, sem API paga**. A "interpretação
+avançada" com IA local (opcional, para PC forte) fica registrada como próximo
+passo possível.

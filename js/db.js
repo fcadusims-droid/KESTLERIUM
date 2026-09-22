@@ -3,7 +3,7 @@
 // Nada aqui é enviado para a internet: fica tudo no seu navegador.
 
 const DB_NAME = 'kestlerium';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // Nomes das "gavetas" (object stores) do banco.
 export const STORES = {
@@ -13,6 +13,7 @@ export const STORES = {
   terms: 'terms',         // termos/conceitos extraídos de cada aula
   research: 'research',   // resultados de pesquisa (Wikipédia/Wikidata)
   subjects: 'subjects',   // matérias e temas (árvore de estudo)
+  cards: 'cards',         // cartões de revisão (flashcards) com agendamento
   meta: 'meta',           // configurações e estado geral
 };
 
@@ -47,6 +48,11 @@ function openDB() {
       if (!db.objectStoreNames.contains(STORES.subjects)) {
         const s = db.createObjectStore(STORES.subjects, { keyPath: 'id' });
         s.createIndex('parentId', 'parentId', { unique: false });
+      }
+      if (!db.objectStoreNames.contains(STORES.cards)) {
+        const s = db.createObjectStore(STORES.cards, { keyPath: 'id' });
+        s.createIndex('lessonId', 'lessonId', { unique: false });
+        s.createIndex('due', 'due', { unique: false });
       }
       if (!db.objectStoreNames.contains(STORES.meta)) {
         db.createObjectStore(STORES.meta, { keyPath: 'key' });

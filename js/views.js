@@ -3,7 +3,7 @@
 import * as lessons from './lessons.js';
 import * as subjects from './subjects.js';
 import * as library from './library.js';
-import { exportarBackup, importarBackup } from './backup.js';
+import { exportarBackup, importarBackup, estadoBackup, suportaPastaBackup, escolherPastaBackup, temPastaBackup, salvarBackupNaPasta } from './backup.js';
 import { estimateStorage } from './db.js';
 import { formatTime, humanSize, humanDuration, escapeHtml, normalize } from './format.js';
 import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
@@ -16,7 +16,7 @@ const rotuloStatus = {
 
 export async function renderBiblioteca(container, ctx) {
   container.innerHTML = '';
-  container.appendChild(bannerBackup());
+  container.appendChild(await bannerBackup(ctx));
 
   // Ações principais.
   const inputArquivo = el('input', { type: 'file', accept: 'audio/*,.mp3,.m4a,.wav,.ogg', style: 'display:none', multiple: true, onchange: (e) => escolherArquivos(e.target.files, ctx) });
@@ -195,13 +195,28 @@ export async function renderIndiceTermos(container, ctx) {
   pintar();
 }
 
-// -------- Banner de backup --------
-function bannerBackup() {
-  return el('div', { class: 'banner-backup' }, [
-    el('span', { class: 'banner-icone' }, '⚠️'),
-    el('span', {}, 'Seus dados ficam guardados apenas neste navegador. Se limpar o histórico/dados do navegador, tudo pode ser apagado. '),
-    el('strong', {}, 'Faça backup de vez em quando'),
-    el('span', {}, ' clicando no botão "Backup".'),
+// -------- Banner de backup (lembrete que fica mais forte com o tempo) --------
+async function bannerBackup(ctx) {
+  const est = await estadoBackup().catch(() => ({ nunca: true, totalAulas: 0 }));
+  // Sem aulas: não precisa alarmar.
+  if (est.totalAulas === 0) {
+    return el('div', { class: 'banner-backup' }, [
+      el('span', { class: 'banner-icone' }, '⚠️'),
+      el('span', {}, 'Seus dados ficam apenas neste navegador. Depois de enviar aulas, '),
+      el('strong', {}, 'faça backup de vez em quando'),
+      el('span', {}, '.'),
+    ]);
+  }
+  const urgente = est.nunca || (est.diasDesde != null && est.diasDesde >= 7) || (est.aulasDesde >= 3);
+  const msg = est.nunca
+    ? 'Você ainda não fez nenhum backup. Se o navegador apagar os dados, você perde tudo.'
+    : (urgente
+        ? `Faz ${est.diasDesde} dia(s) desde o último backup${est.aulasDesde ? ` e você adicionou ${est.aulasDesde} aula(s) desde então` : ''}. É uma boa hora para fazer backup.`
+        : `Último backup há ${est.diasDesde} dia(s). Seus dados ficam só neste navegador.`);
+  return el('div', { class: urgente ? 'banner-backup urgente' : 'banner-backup' }, [
+    el('span', { class: 'banner-icone' }, urgente ? '🔴' : '⚠️'),
+    el('span', {}, msg + ' '),
+    el('button', { class: 'btn-mini', onclick: () => menuBackup(ctx) }, 'Fazer backup agora'),
   ]);
 }
 
@@ -268,9 +283,30 @@ async function menuBackup(ctx) {
       el('button', { class: 'btn btn-secundario', onclick: async () => { try { const r = await exportarBackup({ incluirAudios: false }); toast(`Backup de textos gerado (${r.aulas} aula(s)).`, 'sucesso'); } catch (e) { toast('Erro: ' + e.message, 'erro'); } } }, '⬇️ Baixar backup só de textos (menor)'),
       el('button', { class: 'btn btn-secundario', onclick: () => inputImport.click() }, '⬆️ Restaurar backup (importar arquivo)'),
       inputImport,
+      ...(suportaPastaBackup() ? [pastaBackupBotoes(corpo)] : []),
     ]),
     el('div', { class: 'modal-acoes' }, [el('button', { class: 'btn btn-secundario', onclick: () => overlay.remove() }, 'Fechar')]),
   ]);
   overlay.appendChild(corpo);
   document.body.appendChild(overlay);
+}
+
+// Botões para salvar backup direto numa pasta do computador (Chrome/Edge).
+function pastaBackupBotoes(corpo) {
+  const wrap = el('div', { class: 'pasta-backup' });
+  const status = el('p', { class: 'dica' });
+  const botaoSalvar = el('button', { class: 'btn btn-secundario', style: 'display:none', onclick: async () => {
+    status.textContent = 'Salvando na pasta…';
+    try { const r = await salvarBackupNaPasta({ incluirAudios: true }); status.textContent = `Backup salvo na pasta (${r.aulas} aula(s)).`; toast('Backup salvo na pasta.', 'sucesso'); }
+    catch (e) { status.textContent = 'Erro: ' + e.message; }
+  } }, '💾 Salvar backup agora na pasta');
+  const botaoEscolher = el('button', { class: 'btn btn-secundario', onclick: async () => {
+    try { await escolherPastaBackup(); botaoSalvar.style.display = ''; status.textContent = 'Pasta escolhida. Agora você pode salvar o backup nela quando quiser.'; }
+    catch (e) { if (e.name !== 'AbortError') status.textContent = 'Erro: ' + e.message; }
+  } }, '📁 Escolher uma pasta para os backups');
+  wrap.appendChild(botaoEscolher);
+  wrap.appendChild(botaoSalvar);
+  wrap.appendChild(status);
+  temPastaBackup().then((tem) => { if (tem) { botaoSalvar.style.display = ''; status.textContent = 'Já existe uma pasta escolhida para backups.'; } });
+  return wrap;
 }
