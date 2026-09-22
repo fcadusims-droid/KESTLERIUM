@@ -311,3 +311,20 @@ na transcrição quando o professor pede para pesquisar algo** ("pesquise…",
 "procurem…", "leiam…") e só então oferece a pesquisa (no painel "🔎 Pesquisas
 pedidas"), já com o termo que ele citou e o horário. O app não pesquisa por conta
 própria. Se não for um termo conhecido, ele tenta pegar o nome próprio citado.
+
+### Perguntas/intervenções (mais de uma pessoa falando)
+
+Honestidade primeiro: **identificar quem fala pela voz (diarização) não é viável**
+no navegador, de graça, num computador fraco — o Whisper não faz isso e os
+modelos de voz são pesados. Não fingimos isso.
+
+O que fazemos, e que resolve o problema real (não gerar material errado a partir
+de uma pergunta de aluno): o app **detecta perguntas/intervenções pelo texto e
+pelas pausas** (frases com "?", começos típicos de pergunta, e perguntas logo
+após uma pausa maior — sinal de que outra pessoa interrompeu). Essas frases:
+- ficam **marcadas com ❓** na transcrição;
+- **não entram no material de estudo** (cartões, resumos, capítulos são montados
+  só a partir da explicação);
+- geram um aviso quando parecem existir.
+Como é um palpite pelo texto, o app avisa que pode errar e você pode corrigir
+editando o trecho. Testes: 48 de lógica e 35 de navegador.

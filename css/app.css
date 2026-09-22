@@ -365,3 +365,8 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 /* --- Pesquisa disparada pela fala da aula --- */
 .pesquisa-pedido { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; background: var(--superficie-2); border-radius: 8px; padding: 8px 10px; margin: 6px 0; }
 .pesquisa-frase { flex: 1; color: var(--texto-suave); font-style: italic; min-width: 180px; }
+
+/* --- Detecção de perguntas/intervenções --- */
+.seg-pergunta { background: rgba(214, 69, 69, .06); border-left: 3px solid var(--aviso-borda); border-radius: 6px; }
+.seg-badge { margin: 0 2px; cursor: help; }
+.nota-fala { background: var(--aviso-fundo); border: 1px solid var(--aviso-borda); border-radius: var(--raio); padding: 8px 12px; margin: 6px 0; font-size: .9rem; }

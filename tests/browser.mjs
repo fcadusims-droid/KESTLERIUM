@@ -73,6 +73,7 @@ try {
       { lessonId: 'aula_test', index: 0, start: 0, end: 6, text: 'A Revolução Francesa começou em 1789.' },
       { lessonId: 'aula_test', index: 1, start: 6, end: 12, text: 'Napoleão Bonaparte subiu ao poder depois da revolução.' },
       { lessonId: 'aula_test', index: 2, start: 12, end: 18, text: 'A revolução mudou toda a Europa daquela época. Pesquisem sobre a Europa.' },
+      { lessonId: 'aula_test', index: 3, start: 19.5, end: 20, text: 'E isso funciona sempre?' },
     ];
     for (const s of segs) tx.objectStore('segments').put(s);
     tx.objectStore('audio').put({ lessonId: 'aula_test', blob: makeWav(20), fileName: 'teste.wav', type: 'audio/wav' });
@@ -85,7 +86,9 @@ try {
   await page.goto(base + '/#/aula/aula_test', { waitUntil: 'load' });
   await page.waitForSelector('.transcricao .seg', { timeout: 8000 });
   const numSeg = await page.locator('.transcricao .seg').count();
-  checar('transcrição mostra os 3 trechos', numSeg === 3);
+  checar('transcrição mostra os trechos', numSeg === 4);
+  checar('pergunta é marcada na transcrição', (await page.locator('.seg.seg-pergunta').count()) >= 1);
+  checar('aviso de perguntas/intervenções aparece', await page.isVisible('.nota-fala'));
 
   await page.waitForSelector('.painel-termos .termo', { timeout: 8000 });
   const termos = await page.locator('.painel-termos .termo-nome').allTextContents();

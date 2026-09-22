@@ -10,6 +10,7 @@ import { chapterize, keyTerms, makeTermHighlighter, gerarAtividades } from './st
 import { criarCartoesDaAula, cartoesDaAula } from './cards.js';
 import { buildConceptGraph, layoutGraph, conceptGraphSVG, buildTimeline } from './diagrams.js';
 import { mindMap, acronyms, comparisons, scaffolds } from './memorize.js';
+import { annotateSpeakers, exposicao } from './speakers.js';
 import { painelMapaMental, painelSiglas, painelComparacoes, painelMnemonicos, painelAnotacoes, painelQuiz } from './studypanels.js';
 import { researchTerm, resolveOption, detectResearchRequests } from './research.js';
 import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
@@ -60,8 +61,14 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
 
   // Termos, destaque e capítulos — tudo fundamentado no texto real da aula.
   let termos = await lessons.gerarTermos(lessonId).catch(() => []);
+  // Detecta perguntas/intervenções (não é reconhecimento de voz): o material é
+  // montado a partir da EXPLICAÇÃO, não das perguntas, para não gerar algo errado.
+  const infoFala = annotateSpeakers(segs);
+  const segsPergunta = new Set(infoFala.segments.filter((s) => s.pergunta).map((s) => s.index));
+  const expoSegs = exposicao(infoFala.segments);
+
   const highlighter = makeTermHighlighter(termos);
-  const capitulos = chapterize(segs, termos);
+  const capitulos = chapterize(expoSegs, termos);
   const atividades = gerarAtividades(capitulos, termos);
   const grafo = buildConceptGraph(segs, termos);
   const linhaTempo = buildTimeline(segs, termos);
@@ -69,7 +76,8 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   let destacarTermos = true;
 
   // Preparo automático: garante que os cartões desta aula existam (sem botão).
-  criarCartoesDaAula(lessonId, segs, termos, capitulos)
+  // Usa só a explicação (expoSegs), nunca as perguntas.
+  criarCartoesDaAula(lessonId, expoSegs, termos, capitulos)
     .then(() => { if (ctx.atualizarContadores) ctx.atualizarContadores(); })
     .catch(() => {});
 
@@ -135,7 +143,7 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
     el('button', { class: 'btn-mini', onclick: () => togglePanel(mmPanel, () => { mmPanel.appendChild(painelMapaMental(mindMap(lesson.title, capitulos, termos), irPara)); atualizarLiberacao(); }) }, '🧠 Mapa mental'),
     el('button', { class: 'btn-mini', onclick: () => toggleMapa() }, `🕸️ Mapa de conexões (${grafo.nodes.length})`),
     el('button', { class: 'btn-mini', onclick: () => togglePanel(siglasPanel, () => siglasPanel.appendChild(painelSiglas(acronyms(capitulos, termos), irPara))) }, '🔤 Siglas'),
-    el('button', { class: 'btn-mini', onclick: () => togglePanel(compPanel, () => compPanel.appendChild(painelComparacoes(comparisons(segs, termos, grafo), irPara))) }, '⚖️ Comparar'),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(compPanel, () => compPanel.appendChild(painelComparacoes(comparisons(expoSegs, termos, grafo), irPara))) }, '⚖️ Comparar'),
     el('button', { class: 'btn-mini', onclick: () => togglePanel(mnemoPanel, () => mnemoPanel.appendChild(painelMnemonicos(scaffolds(capitulos, termos), irPara))) }, '🏛️ Mnemônicos'),
     el('button', { class: 'btn-mini', onclick: () => toggleLinha() }, `📅 Linha do tempo (${linhaTempo.length})`),
   ]);
@@ -185,6 +193,7 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
       construirPreTreino(termos, irPara),
       barraEstudo,
       barraEstudo2,
+      infoFala.temVariasPessoas ? el('div', { class: 'nota-fala' }, `❓ Esta aula parece ter perguntas/intervenções de outra(s) pessoa(s) (${infoFala.perguntas} detectada(s)). Elas ficam marcadas com ❓ na transcrição e NÃO entram no material de estudo — ele é montado a partir da explicação. (O app não identifica quem fala pela voz; detecta perguntas pelo texto e pelas pausas, então pode errar; corrija editando o trecho se precisar.)`) : null,
       estudoGuiado,
       quizPanel,
       notasPanel,
@@ -335,12 +344,14 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
       class: 'seg-editar', title: 'Corrigir este trecho', 'aria-label': 'Corrigir este trecho',
       onclick: (e) => { e.stopPropagation(); abrirEdicao(s, t, texto); },
     }, '✎');
+    const ehPergunta = segsPergunta.has(s.index);
     const t = el('div', {
-      class: 'seg', role: 'listitem', 'data-start': s.start, tabindex: '0',
+      class: 'seg' + (ehPergunta ? ' seg-pergunta' : ''), role: 'listitem', 'data-start': s.start, tabindex: '0',
       onclick: () => irPara(s.start),
       onkeydown: (e) => { if (e.key === 'Enter') irPara(s.start); },
     }, [
       el('span', { class: 'seg-tempo' }, formatTime(s.start)),
+      ehPergunta ? el('span', { class: 'seg-badge', title: 'Pergunta/intervenção (não entra no material)' }, '❓') : null,
       texto,
       editar,
     ]);

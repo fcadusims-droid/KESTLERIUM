@@ -8,6 +8,7 @@ import { renderBiblioteca, renderTermoGlobal, renderIndiceTermos } from './views
 import { renderRevisao } from './review.js';
 import { contarVencidos, criarCartoesDaAula } from './cards.js';
 import { chapterize } from './study.js';
+import { annotateSpeakers, exposicao } from './speakers.js';
 import { renderAjuda } from './help.js';
 import { el, toast } from './ui.js';
 
@@ -47,7 +48,8 @@ async function iniciarTranscricao(lessonId, handlers) {
       try {
         const segs = await lessons.obterSegmentos(l.id);
         const termos = await lessons.gerarTermos(l.id);
-        await criarCartoesDaAula(l.id, segs, termos, chapterize(segs, termos));
+        const expo = exposicao(annotateSpeakers(segs).segments); // material só da explicação
+        await criarCartoesDaAula(l.id, expo, termos, chapterize(expo, termos));
       } catch { /* segue mesmo se falhar */ }
       notificar(lessonId, 'onDone', l);
       atualizarContadores();
