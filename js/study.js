@@ -112,17 +112,23 @@ export function makeCloze(frase, terms, start = 0) {
   return null;
 }
 
-// Monta a lista de atividades do "estudo guiado", uma por capítulo.
-// Alterna entre recuperar de memória, prever, responder uma lacuna e
-// autoexplicar. A lacuna só entra quando dá para montar de uma frase real.
+// Monta a lista de atividades do "estudo guiado", uma por capítulo, com
+// DIFICULDADE PROGRESSIVA: começa fácil (recuperar de memória), passa por
+// responder uma lacuna, e termina difícil (perguntar "por quê?" e explicar como
+// para uma criança — Feynman). Tudo fundamentado na frase real da aula.
 export function gerarAtividades(capitulos, terms) {
-  const ciclo = ['recuperacao', 'pergunta', 'previsao', 'autoexplicacao'];
+  const n = (capitulos || []).length || 1;
   return (capitulos || []).map((c, i) => {
-    let tipo = ciclo[i % ciclo.length];
+    const r = n === 1 ? 0 : i / (n - 1);
+    let tipo;
     let cloze = null;
-    if (tipo === 'pergunta') {
+    if (r < 0.34) {
+      tipo = 'recuperacao';
+    } else if (r < 0.67) {
       cloze = makeCloze(c.fraseChave, terms);
-      if (!cloze) tipo = 'recuperacao';
+      tipo = cloze ? 'pergunta' : 'autoexplicacao';
+    } else {
+      tipo = (i % 2 === 0) ? 'elaborativa' : 'feynman';
     }
     return { capIndex: i, tipo, cloze, titulo: c.titulo, endSec: c.endSec, startSec: c.startSec };
   });

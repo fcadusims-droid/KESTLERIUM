@@ -5,13 +5,14 @@
 const TARGET_RATE = 16000;
 
 // Decodifica um Blob de áudio (MP3) para um Float32Array mono em 16 kHz.
+// IMPORTANTE (correção de travamento): juntar canais e reamostrar milhões de
+// amostras "na mão" congelava o navegador em aulas longas. Agora deixamos o
+// próprio motor de áudio do navegador (OfflineAudioContext) fazer isso de forma
+// nativa e sem travar a tela. Só caímos no método manual se algo falhar.
 export async function decodeToMono16k(blob, onProgress) {
   const arrayBuffer = await blob.arrayBuffer();
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  // Pede para decodificar já em 16 kHz. Isso reduz muito o uso de memória em
-  // aulas longas (uma aula de 1 h ocuparia mais de 1 GB se decodificada na
-  // taxa original). Se o navegador não aceitar 16 kHz, decodifica normal e
-  // reamostra depois.
+  // Pede para decodificar já em 16 kHz (reduz memória em aulas longas).
   let tmpCtx;
   try { tmpCtx = new AudioCtx({ sampleRate: TARGET_RATE }); } catch { tmpCtx = new AudioCtx(); }
   let decoded;
@@ -21,23 +22,53 @@ export async function decodeToMono16k(blob, onProgress) {
     if (tmpCtx.close) tmpCtx.close();
   }
   if (onProgress) onProgress(0.5);
+  const duration = decoded.duration;
 
-  // Mistura para mono.
+  // Caminho rápido e sem travar: renderiza mono 16 kHz com OfflineAudioContext.
+  const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (OfflineCtx) {
+    try {
+      const frames = Math.max(1, Math.ceil(duration * TARGET_RATE));
+      const offline = new OfflineCtx(1, frames, TARGET_RATE);
+      const src = offline.createBufferSource();
+      src.buffer = decoded;               // ligar a fonte (estéreo) a um destino mono já mistura os canais
+      src.connect(offline.destination);
+      src.start(0);
+      const rendered = await offline.startRendering();
+      const samples = rendered.getChannelData(0);
+      if (onProgress) onProgress(1);
+      return { samples, sampleRate: TARGET_RATE, duration };
+    } catch {
+      // se falhar, segue para o método manual (mais lento) abaixo
+    }
+  }
+
+  // Método manual de reserva: mistura e reamostra em pedaços, cedendo a vez para
+  // a interface entre eles (para não congelar).
+  const samples = await downmixResampleChunked(decoded, onProgress);
+  if (onProgress) onProgress(1);
+  return { samples, sampleRate: TARGET_RATE, duration };
+}
+
+// Mistura para mono e reamostra em pedaços, sem bloquear a tela.
+async function downmixResampleChunked(decoded, onProgress) {
   const numCh = decoded.numberOfChannels;
   const length = decoded.length;
+  const canais = [];
+  for (let ch = 0; ch < numCh; ch++) canais.push(decoded.getChannelData(ch));
   const mono = new Float32Array(length);
-  for (let ch = 0; ch < numCh; ch++) {
-    const data = decoded.getChannelData(ch);
-    for (let i = 0; i < length; i++) mono[i] += data[i] / numCh;
+  const PASSO = 500000;
+  for (let i = 0; i < length; i += PASSO) {
+    const fim = Math.min(length, i + PASSO);
+    for (let j = i; j < fim; j++) {
+      let soma = 0;
+      for (let ch = 0; ch < numCh; ch++) soma += canais[ch][j];
+      mono[j] = soma / numCh;
+    }
+    if (onProgress) onProgress(0.5 + 0.4 * (fim / length));
+    await new Promise((r) => setTimeout(r)); // deixa a interface respirar
   }
-
-  // Reamostra para 16 kHz, se necessário.
-  let samples = mono;
-  if (decoded.sampleRate !== TARGET_RATE) {
-    samples = resampleLinear(mono, decoded.sampleRate, TARGET_RATE);
-  }
-  if (onProgress) onProgress(1);
-  return { samples, sampleRate: TARGET_RATE, duration: decoded.duration };
+  return decoded.sampleRate === TARGET_RATE ? mono : resampleLinear(mono, decoded.sampleRate, TARGET_RATE);
 }
 
 // Reamostragem linear simples (leve e suficiente para voz).

@@ -264,3 +264,67 @@ tempo que acendem com o áudio — tudo **fundamentado na própria aula** (o app
 inventa significado) e **100% no navegador, sem API paga**. A "interpretação
 avançada" com IA local (opcional, para PC forte) fica registrada como próximo
 passo possível.
+
+### Correção de travamento na transcrição (crítico)
+
+Você relatou que o navegador **travou** ao enviar um arquivo e começar a
+transcrever. A causa: o preparo do áudio (juntar os canais e reamostrar ~65
+milhões de amostras numa aula de 1 h) rodava na thread principal, congelando a
+tela. Corrigido: agora o próprio motor de áudio do navegador
+(OfflineAudioContext) faz isso de forma nativa, sem travar; há um método de
+reserva em pedaços (que "respira" entre eles) caso o navegador não suporte.
+Validei com a transcrição real de um trecho da sua aula: resultado idêntico e
+correto (0,30x a duração). O restante da otimização (aulas muito longas na tela)
+vem depois, como combinado.
+
+### Kestlerium 3.0 — Memorização automática (em andamento)
+
+Novas técnicas de memorização, montadas automaticamente da própria aula e
+entregues prontas (sem botão de ativar). Cartões passam a ser criados sozinhos
+ao terminar a transcrição e ao abrir a aula.
+
+- **Estudo guiado com dificuldade progressiva** e novos passos: questionamento
+  elaborativo ("por quê?") e Feynman ("explique como para uma criança").
+- **Mapa mental** (aula → capítulos → termos), **siglas mnemônicas** (iniciais
+  dos termos), **comparação de conceitos** (lado a lado) e **quiz** (teste rápido).
+- **Anotações** por aula (salvas) e **andaimes honestos** para palácio da memória
+  / imagens / histórias (o app prepara os termos na ordem; você cria).
+- Técnicas já existentes (active recall, repetição espaçada, flashcards,
+  autoexplicação, grifos, mapa conceitual, resumo, chunking) foram tornadas
+  automáticas/sempre-ligadas.
+- Testes: 42 de lógica e 31 de navegador, todos passando.
+
+### Liberação progressiva conforme o player
+
+O material de estudo é criado inteiro assim que a aula é transcrita (porque o app
+já "leu" a aula toda), mas é **liberado conforme você avança no áudio**:
+- Os capítulos futuros aparecem **bloqueados (🔒)** e com a frase-chave borrada;
+  desbloqueiam quando você chega neles (com um aviso "🔓 Novo trecho liberado").
+- O mapa mental escurece os ramos que você ainda não ouviu.
+- O **quiz** só pergunta sobre o que você já ouviu (mais perguntas vão surgindo
+  conforme você avança). Voltar no áudio não re-bloqueia o que já foi visto.
+
+### Pesquisa disparada pela fala da aula
+
+A pesquisa nas fontes deixou de ser um botão em cada termo. Agora o app **detecta
+na transcrição quando o professor pede para pesquisar algo** ("pesquise…",
+"procurem…", "leiam…") e só então oferece a pesquisa (no painel "🔎 Pesquisas
+pedidas"), já com o termo que ele citou e o horário. O app não pesquisa por conta
+própria. Se não for um termo conhecido, ele tenta pegar o nome próprio citado.
+
+### Perguntas/intervenções (mais de uma pessoa falando)
+
+Honestidade primeiro: **identificar quem fala pela voz (diarização) não é viável**
+no navegador, de graça, num computador fraco — o Whisper não faz isso e os
+modelos de voz são pesados. Não fingimos isso.
+
+O que fazemos, e que resolve o problema real (não gerar material errado a partir
+de uma pergunta de aluno): o app **detecta perguntas/intervenções pelo texto e
+pelas pausas** (frases com "?", começos típicos de pergunta, e perguntas logo
+após uma pausa maior — sinal de que outra pessoa interrompeu). Essas frases:
+- ficam **marcadas com ❓** na transcrição;
+- **não entram no material de estudo** (cartões, resumos, capítulos são montados
+  só a partir da explicação);
+- geram um aviso quando parecem existir.
+Como é um palpite pelo texto, o app avisa que pode errar e você pode corrigir
+editando o trecho. Testes: 48 de lógica e 35 de navegador.

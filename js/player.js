@@ -7,9 +7,12 @@ import { formatTime, escapeHtml, humanDuration, makeId, normalize } from './form
 import { searchSegments, segmentIndexAtTime, highlight } from './search.js';
 import { mergeTerms, suggestMerges } from './entities.js';
 import { chapterize, keyTerms, makeTermHighlighter, gerarAtividades } from './study.js';
-import { criarCartoesDaAula } from './cards.js';
+import { criarCartoesDaAula, cartoesDaAula } from './cards.js';
 import { buildConceptGraph, layoutGraph, conceptGraphSVG, buildTimeline } from './diagrams.js';
-import { researchTerm, resolveOption } from './research.js';
+import { mindMap, acronyms, comparisons, scaffolds } from './memorize.js';
+import { annotateSpeakers, exposicao } from './speakers.js';
+import { painelMapaMental, painelSiglas, painelComparacoes, painelMnemonicos, painelAnotacoes, painelQuiz } from './studypanels.js';
+import { researchTerm, resolveOption, detectResearchRequests } from './research.js';
 import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
 import { MODELS, IDIOMAS } from './config.js';
 
@@ -58,12 +61,25 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
 
   // Termos, destaque e capítulos — tudo fundamentado no texto real da aula.
   let termos = await lessons.gerarTermos(lessonId).catch(() => []);
+  // Detecta perguntas/intervenções (não é reconhecimento de voz): o material é
+  // montado a partir da EXPLICAÇÃO, não das perguntas, para não gerar algo errado.
+  const infoFala = annotateSpeakers(segs);
+  const segsPergunta = new Set(infoFala.segments.filter((s) => s.pergunta).map((s) => s.index));
+  const expoSegs = exposicao(infoFala.segments);
+
   const highlighter = makeTermHighlighter(termos);
-  const capitulos = chapterize(segs, termos);
+  const capitulos = chapterize(expoSegs, termos);
   const atividades = gerarAtividades(capitulos, termos);
   const grafo = buildConceptGraph(segs, termos);
   const linhaTempo = buildTimeline(segs, termos);
+  const pedidosPesquisa = detectResearchRequests(segs, termos);
   let destacarTermos = true;
+
+  // Preparo automático: garante que os cartões desta aula existam (sem botão).
+  // Usa só a explicação (expoSegs), nunca as perguntas.
+  criarCartoesDaAula(lessonId, expoSegs, termos, capitulos)
+    .then(() => { if (ctx.atualizarContadores) ctx.atualizarContadores(); })
+    .catch(() => {});
 
   // Para sincronizar os diagramas com o áudio: quais termos há em cada trecho,
   // e onde cada termo aparece pela primeira vez (para clicar e ouvir).
@@ -87,22 +103,66 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   const estudoGuiado = el('div', { class: 'estudo-guiado' });
   const mapaPanel = el('div', { class: 'diagrama-panel' });
   const linhaPanel = el('div', { class: 'diagrama-panel' });
+  const mmPanel = el('div', { class: 'diagrama-panel' });
+  const siglasPanel = el('div', { class: 'diagrama-panel' });
+  const compPanel = el('div', { class: 'diagrama-panel' });
+  const mnemoPanel = el('div', { class: 'diagrama-panel' });
+  const notasPanel = el('div', { class: 'diagrama-panel' });
+  const quizPanel = el('div', { class: 'diagrama-panel' });
+  const pesquisaPanel = el('div', { class: 'diagrama-panel' });
+
   const barraEstudo = el('div', { class: 'barra-estudo' }, [
     el('button', { class: 'btn-mini btn-estudo', onclick: () => iniciarGuiado() }, '▶️ Estudo guiado'),
+    el('button', { class: 'btn-mini', onclick: async () => { const aberto = quizPanel.classList.toggle('aberto'); if (aberto) await montarQuiz(); } }, '🎯 Quiz'),
+    el('button', { class: 'btn-mini', onclick: () => { ctx.navigate('#/revisar'); } }, '🃏 Revisar cartões'),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(notasPanel, () => notasPanel.appendChild(painelAnotacoes(lesson, lessons.salvarAula))) }, '📝 Anotações'),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(pesquisaPanel, montarPesquisas) }, `🔎 Pesquisas pedidas (${pedidosPesquisa.length})`),
     el('button', { class: 'btn-mini', onclick: () => alternarFoco() }, '🎯 Modo foco'),
     btnDestacar,
-    el('button', { class: 'btn-mini', onclick: () => roteiro.classList.toggle('aberto') }, `🗺️ Roteiro (${capitulos.length})`),
-    el('button', { class: 'btn-mini', onclick: () => toggleMapa() }, `🕸️ Mapa (${grafo.nodes.length})`),
-    el('button', { class: 'btn-mini', onclick: () => toggleLinha() }, `📅 Linha do tempo (${linhaTempo.length})`),
-    el('button', { class: 'btn-mini', onclick: async (e) => {
-      e.target.disabled = true;
-      const cs = await criarCartoesDaAula(lessonId, segs, termos, capitulos, { recriar: true });
-      if (ctx.atualizarContadores) ctx.atualizarContadores();
-      toast(`${cs.length} cartão(ões) criados. Vá em "Revisar" para estudar.`, 'sucesso');
-      e.target.disabled = false;
-      ctx.navigate('#/revisar');
-    } }, '🃏 Criar cartões'),
   ]);
+
+  function montarPesquisas() {
+    pesquisaPanel.appendChild(dica('Momentos em que a AULA pediu para você pesquisar algo. A pesquisa só aparece quando o professor pede — o app não pesquisa por conta própria.'));
+    if (!pedidosPesquisa.length) { pesquisaPanel.appendChild(el('p', { class: 'dica' }, 'O professor não pediu nenhuma pesquisa nesta aula.')); return; }
+    for (const p of pedidosPesquisa) {
+      pesquisaPanel.appendChild(el('div', { class: 'pesquisa-pedido' }, [
+        el('button', { class: 'seg-tempo', onclick: () => irPara(p.start) }, formatTime(p.start)),
+        el('span', { class: 'pesquisa-frase' }, `“${p.frase}”`),
+        el('button', { class: 'btn-mini', onclick: () => abrirPesquisaDeTermo(p.termo) }, `🔎 pesquisar “${p.termo}”`),
+      ]));
+    }
+  }
+  function abrirPesquisaDeTermo(nome) {
+    const norm = normalize(nome);
+    const occurrences = [];
+    for (const s of segs) if (normalize(s.text).includes(norm)) occurrences.push({ index: s.index, start: s.start });
+    modalPesquisa({ name: nome, occurrences }, segs, irPara);
+  }
+  const barraEstudo2 = el('div', { class: 'barra-estudo' }, [
+    el('button', { class: 'btn-mini', onclick: () => roteiro.classList.toggle('aberto') }, `🗺️ Roteiro (${capitulos.length})`),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(mmPanel, () => { mmPanel.appendChild(painelMapaMental(mindMap(lesson.title, capitulos, termos), irPara)); atualizarLiberacao(); }) }, '🧠 Mapa mental'),
+    el('button', { class: 'btn-mini', onclick: () => toggleMapa() }, `🕸️ Mapa de conexões (${grafo.nodes.length})`),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(siglasPanel, () => siglasPanel.appendChild(painelSiglas(acronyms(capitulos, termos), irPara))) }, '🔤 Siglas'),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(compPanel, () => compPanel.appendChild(painelComparacoes(comparisons(expoSegs, termos, grafo), irPara))) }, '⚖️ Comparar'),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(mnemoPanel, () => mnemoPanel.appendChild(painelMnemonicos(scaffolds(capitulos, termos), irPara))) }, '🏛️ Mnemônicos'),
+    el('button', { class: 'btn-mini', onclick: () => toggleLinha() }, `📅 Linha do tempo (${linhaTempo.length})`),
+  ]);
+
+  // Liga/desliga um painel, montando o conteúdo só na primeira vez.
+  function togglePanel(panel, montar, montarQuizFn) {
+    if (!panel.dataset.montado) { (montarQuizFn || montar)(); panel.dataset.montado = '1'; }
+    panel.classList.toggle('aberto');
+  }
+  async function montarQuiz() {
+    const todos = await cartoesDaAula(lessonId);
+    const cs = todos.filter((c) => (c.start || 0) <= tempoMax + 1);
+    if (!cs.length && todos.length) {
+      quizPanel.innerHTML = '';
+      quizPanel.appendChild(dica('As perguntas são liberadas conforme você ouve a aula. Toque um pouco e volte aqui.'));
+      return;
+    }
+    painelQuiz(quizPanel, cs, irPara);
+  }
 
   // Controle de ritmo: velocidade (com aviso) e repetir o trecho atual.
   let avisouVelocidade = false;
@@ -132,9 +192,18 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
       el('div', { class: 'player-caixa' }, [audio, controlesAudio]),
       construirPreTreino(termos, irPara),
       barraEstudo,
+      barraEstudo2,
+      infoFala.temVariasPessoas ? el('div', { class: 'nota-fala' }, `❓ Esta aula parece ter perguntas/intervenções de outra(s) pessoa(s) (${infoFala.perguntas} detectada(s)). Elas ficam marcadas com ❓ na transcrição e NÃO entram no material de estudo — ele é montado a partir da explicação. (O app não identifica quem fala pela voz; detecta perguntas pelo texto e pelas pausas, então pode errar; corrija editando o trecho se precisar.)`) : null,
       estudoGuiado,
+      quizPanel,
+      notasPanel,
+      pesquisaPanel,
       roteiro,
+      mmPanel,
       mapaPanel,
+      siglasPanel,
+      compPanel,
+      mnemoPanel,
       linhaPanel,
       el('div', { class: 'barra-busca' }, [busca]),
       resultadosBusca,
@@ -275,12 +344,14 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
       class: 'seg-editar', title: 'Corrigir este trecho', 'aria-label': 'Corrigir este trecho',
       onclick: (e) => { e.stopPropagation(); abrirEdicao(s, t, texto); },
     }, '✎');
+    const ehPergunta = segsPergunta.has(s.index);
     const t = el('div', {
-      class: 'seg', role: 'listitem', 'data-start': s.start, tabindex: '0',
+      class: 'seg' + (ehPergunta ? ' seg-pergunta' : ''), role: 'listitem', 'data-start': s.start, tabindex: '0',
       onclick: () => irPara(s.start),
       onkeydown: (e) => { if (e.key === 'Enter') irPara(s.start); },
     }, [
       el('span', { class: 'seg-tempo' }, formatTime(s.start)),
+      ehPergunta ? el('span', { class: 'seg-badge', title: 'Pergunta/intervenção (não entra no material)' }, '❓') : null,
       texto,
       editar,
     ]);
@@ -313,10 +384,31 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
     audio.play().catch(() => {});
   }
 
+  // Liberação progressiva: o material já existe, mas só é liberado conforme o
+  // player avança. Guardamos o ponto máximo já alcançado (voltar não re-bloqueia).
+  let tempoMax = 0;
+  let capsLiberados = capitulos.filter((c) => c.startSec <= 0.1).length;
+  function atualizarLiberacao() {
+    tempoMax = Math.max(tempoMax, audio.currentTime);
+    const container = layout;
+    container.querySelectorAll('.roteiro-item[data-start], .mm-ramo[data-start]').forEach((elm) => {
+      const st = Number(elm.getAttribute('data-start'));
+      elm.classList.toggle('bloqueado', st > tempoMax + 0.1);
+    });
+    const liberadosAgora = capitulos.filter((c) => c.startSec <= tempoMax + 0.1).length;
+    if (liberadosAgora > capsLiberados) {
+      capsLiberados = liberadosAgora;
+      toast('🔓 Novo trecho de estudo liberado.', 'info', 2500);
+    }
+  }
+
+  atualizarLiberacao(); // estado inicial dos bloqueios
+
   // Destaca o trecho atual conforme o áudio toca.
   let atual = -1;
   audio.addEventListener('timeupdate', () => {
     checarLimiteGuiado();
+    atualizarLiberacao();
     const idx = segmentIndexAtTime(segs, audio.currentTime);
     if (idx !== atual && idx >= 0) {
       if (segEls[atual]) segEls[atual].classList.remove('seg-atual');
@@ -384,10 +476,11 @@ function construirRoteiro(capitulos, irPara) {
   box.appendChild(dica('Roteiro montado automaticamente. Cada trecho mostra uma frase da PRÓPRIA aula (com o horário) — o app não inventa resumo.'));
   if (!capitulos.length) { box.appendChild(el('p', { class: 'dica' }, 'Sem capítulos.')); return box; }
   capitulos.forEach((c, i) => {
-    box.appendChild(el('div', { class: 'roteiro-item' }, [
+    box.appendChild(el('div', { class: 'roteiro-item', 'data-start': c.startSec }, [
       el('button', { class: 'roteiro-titulo', onclick: () => irPara(c.startSec) }, [
         el('span', { class: 'roteiro-num' }, String(i + 1)),
         el('span', {}, c.titulo || `Parte ${i + 1}`),
+        el('span', { class: 'cadeado', title: 'Libera quando você chegar aqui' }, '🔒'),
         el('span', { class: 'seg-tempo' }, formatTime(c.startSec)),
       ]),
       el('button', { class: 'roteiro-frase', title: `Ouvir (${formatTime(c.fraseChave.start)})`, onclick: () => irPara(c.fraseChave.start) }, [
@@ -435,6 +528,19 @@ function cardAtividade(at, cap, i, total, h) {
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') verificar(); });
     card.appendChild(el('div', { class: 'atividade-linha' }, [input, el('button', { class: 'btn btn-secundario', onclick: verificar }, 'Verificar')]));
     card.appendChild(feedback);
+  } else if (at.tipo === 'elaborativa') {
+    card.appendChild(el('h4', {}, '🤔 Pergunte "por quê?"'));
+    card.appendChild(el('p', {}, 'Responda para você mesmo: Por que isto acontece? Como se liga ao que veio antes? Qual a causa e qual a consequência? Ligar as ideias fixa muito mais do que decorar solto.'));
+    const area = el('div', { class: 'atividade-revelar' });
+    card.appendChild(el('button', { class: 'btn btn-secundario', onclick: () => { area.innerHTML = ''; area.appendChild(el('p', { class: 'dica' }, 'Frase desta parte para pensar em cima:')); area.appendChild(revelarTrecho()); } }, 'Mostrar o trecho'));
+    card.appendChild(area);
+  } else if (at.tipo === 'feynman') {
+    card.appendChild(el('h4', {}, '👶 Explique como para uma criança (Feynman)'));
+    card.appendChild(el('p', {}, 'Explique esta parte da forma mais simples possível, como se a pessoa nunca tivesse ouvido falar disso. Onde você travar ou usar palavra difícil, é aí que você ainda não entendeu — volte ao trecho e tente de novo.'));
+    const area = el('div', { class: 'atividade-revelar' });
+    card.appendChild(el('textarea', { class: 'campo', rows: '3', placeholder: 'Escreva sua explicação simples…' }));
+    card.appendChild(el('button', { class: 'btn btn-secundario', onclick: () => { area.innerHTML = ''; area.appendChild(el('p', { class: 'dica' }, 'Confira com a frase desta parte:')); area.appendChild(revelarTrecho()); } }, 'Mostrar o trecho'));
+    card.appendChild(area);
   } else {
     card.appendChild(el('h4', {}, '🗣️ Explique com suas palavras'));
     card.appendChild(el('p', {}, 'Explique esta parte como se ensinasse alguém. Falar com as próprias palavras revela o que você realmente entendeu.'));
@@ -587,7 +693,6 @@ async function painelTermos(lesson, segs, audio, ctx) {
         el('span', { class: 'termo-contagem', title: 'Quantas vezes apareceu' }, String(t.count)),
       ]);
       const controles = el('div', { class: 'termo-controles' }, [
-        el('button', { class: 'btn-mini', title: 'Pesquisar nas fontes', onclick: () => abrirPesquisa(t) }, '🔎 pesquisar'),
         el('button', { class: 'btn-mini', title: 'Renomear', onclick: () => renomearTermo(t) }, 'renomear'),
         el('button', { class: 'btn-mini', title: 'Juntar com outro termo', onclick: () => iniciarMerge(t) }, 'mesclar'),
         el('button', { class: 'btn-mini btn-mini-perigo', title: 'Apagar (falso positivo)', onclick: () => apagar(t) }, 'apagar'),
@@ -654,8 +759,6 @@ async function painelTermos(lesson, segs, audio, ctx) {
     pintarLista();
     toast('Termos recalculados.', 'sucesso');
   }
-
-  function abrirPesquisa(t) { modalPesquisa(t, segs, irPara); }
 
   pintarLista();
   pintarSugestoes();

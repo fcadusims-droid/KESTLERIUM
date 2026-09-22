@@ -72,7 +72,8 @@ try {
     const segs = [
       { lessonId: 'aula_test', index: 0, start: 0, end: 6, text: 'A Revolução Francesa começou em 1789.' },
       { lessonId: 'aula_test', index: 1, start: 6, end: 12, text: 'Napoleão Bonaparte subiu ao poder depois da revolução.' },
-      { lessonId: 'aula_test', index: 2, start: 12, end: 18, text: 'A revolução mudou toda a Europa daquela época.' },
+      { lessonId: 'aula_test', index: 2, start: 12, end: 18, text: 'A revolução mudou toda a Europa daquela época. Pesquisem sobre a Europa.' },
+      { lessonId: 'aula_test', index: 3, start: 19.5, end: 20, text: 'E isso funciona sempre?' },
     ];
     for (const s of segs) tx.objectStore('segments').put(s);
     tx.objectStore('audio').put({ lessonId: 'aula_test', blob: makeWav(20), fileName: 'teste.wav', type: 'audio/wav' });
@@ -85,7 +86,9 @@ try {
   await page.goto(base + '/#/aula/aula_test', { waitUntil: 'load' });
   await page.waitForSelector('.transcricao .seg', { timeout: 8000 });
   const numSeg = await page.locator('.transcricao .seg').count();
-  checar('transcrição mostra os 3 trechos', numSeg === 3);
+  checar('transcrição mostra os trechos', numSeg === 4);
+  checar('pergunta é marcada na transcrição', (await page.locator('.seg.seg-pergunta').count()) >= 1);
+  checar('aviso de perguntas/intervenções aparece', await page.isVisible('.nota-fala'));
 
   await page.waitForSelector('.painel-termos .termo', { timeout: 8000 });
   const termos = await page.locator('.painel-termos .termo-nome').allTextContents();
@@ -111,7 +114,7 @@ try {
   await page.click('.barra-estudo button:has-text("Modo foco")');
 
   // Fase E: mapa conceitual e linha do tempo.
-  await page.click('.barra-estudo button:has-text("Mapa")');
+  await page.click('.barra-estudo button:has-text("Mapa de conexões")');
   await page.waitForSelector('.grafo-svg', { timeout: 4000 });
   checar('mapa conceitual desenha os nós', (await page.locator('.no-grafo').count()) >= 2);
   await page.click('.barra-estudo button:has-text("Linha do tempo")');
@@ -122,6 +125,32 @@ try {
   await page.click('.controles-audio button:has-text("1.5x")');
   const vel = await page.evaluate(() => document.querySelector('audio.player').playbackRate);
   checar('velocidade do áudio muda para 1.5x', Math.abs(vel - 1.5) < 0.01);
+
+  // 3.0: mecânicas de memorização automáticas.
+  await page.click('.barra-estudo button:has-text("Mapa mental")');
+  await page.waitForSelector('.mm-centro', { timeout: 4000 });
+  checar('mapa mental mostra centro e ramos', await page.isVisible('.mm-centro'));
+  await page.click('.barra-estudo button:has-text("Siglas")');
+  await page.waitForSelector('.sigla-letras', { timeout: 4000 }).catch(() => {});
+  checar('siglas geradas a partir dos termos', (await page.locator('.sigla-letras').count()) >= 1);
+  await page.click('.barra-estudo button:has-text("Anotações")');
+  await page.waitForSelector('.diagrama-panel textarea', { timeout: 4000 });
+  checar('anotações têm campo de texto', (await page.locator('.diagrama-panel textarea').count()) >= 1);
+  // Espera os cartões automáticos e o áudio carregar.
+  await page.waitForFunction(() => new Promise((res) => { const r = indexedDB.open('kestlerium'); r.onsuccess = () => { try { const q = r.result.transaction('cards', 'readonly').objectStore('cards').count(); q.onsuccess = () => res(q.result > 0); q.onerror = () => res(false); } catch { res(false); } }; r.onerror = () => res(false); }), undefined, { timeout: 8000 });
+  await page.waitForFunction(() => { const a = document.querySelector('audio.player'); return a && !Number.isNaN(a.duration) && a.duration > 15; }, undefined, { timeout: 8000 }).catch(() => {});
+  const parseTotal = (s) => Number((String(s).match(/de (\d+)/) || [])[1] || 0);
+  await page.click('.barra-estudo button:has-text("Quiz")');
+  await page.waitForSelector('.card-frente', { timeout: 5000 });
+  const totalAntes = parseTotal(await page.textContent('.card-tipo'));
+  checar('quiz mostra uma pergunta (cartões automáticos)', totalAntes >= 1);
+  // Avança o player e reabre: devem liberar mais perguntas (liberação progressiva).
+  await page.evaluate(async () => { const a = document.querySelector('audio.player'); a.currentTime = 19.5; await new Promise((r) => setTimeout(r, 150)); a.dispatchEvent(new Event('timeupdate')); });
+  await page.click('.barra-estudo button:has-text("Quiz")'); // fecha
+  await page.click('.barra-estudo button:has-text("Quiz")'); // reabre (re-renderiza)
+  await page.waitForFunction((antes) => { const el = document.querySelector('.card-tipo'); if (!el) return false; const m = el.textContent.match(/de (\d+)/); return m && Number(m[1]) > antes; }, totalAntes, { timeout: 5000 }).catch(() => {});
+  const totalDepois = parseTotal(await page.textContent('.card-tipo'));
+  checar(`quiz libera mais perguntas conforme o player avança (${totalAntes} -> ${totalDepois})`, totalDepois > totalAntes);
 
   // Fase C: estudo guiado — inicia e simula chegar ao fim do capítulo.
   await page.waitForFunction(() => { const a = document.querySelector('audio.player'); return a && !Number.isNaN(a.duration) && a.duration > 15; }, undefined, { timeout: 8000 }).catch(() => {});
@@ -138,10 +167,13 @@ try {
     checar('estudo guiado chega ao fim', fim);
   }
 
-  // Abre a pesquisa de um termo (só valida que o modal abre).
-  await page.click('.painel-termos .termo:first-child button:has-text("pesquisar")');
+  // Pesquisa só quando o professor pede (detectada na fala da aula).
+  await page.click('.barra-estudo button:has-text("Pesquisas pedidas")');
+  await page.waitForSelector('.pesquisa-pedido', { timeout: 4000 });
+  checar('pesquisa aparece só quando a aula pede', (await page.locator('.pesquisa-pedido').count()) >= 1);
+  await page.click('.pesquisa-pedido button:has-text("pesquisar")');
   await page.waitForSelector('.modal-largo', { timeout: 5000 });
-  checar('modal de pesquisa abre', await page.isVisible('.colunas-pesquisa'));
+  checar('modal de pesquisa abre a partir do pedido da aula', await page.isVisible('.colunas-pesquisa'));
   checar('mostra "O que a aula disse"', (await page.textContent('.lado-aula')).includes('O que a aula disse'));
   await page.click('.modal-topo button');
 
@@ -154,10 +186,16 @@ try {
   const textoCorrigido = await page.textContent('.transcricao .seg:first-child .seg-texto');
   checar('correção de trecho é salva', textoCorrigido === 'Texto corrigido pelo teste.');
 
-  // Fase D: cartões e revisão espaçada.
-  await page.click('.barra-estudo button:has-text("Criar cartões")');
-  await page.waitForSelector('.card-revisao', { timeout: 6000 });
-  checar('revisão mostra um cartão', await page.isVisible('.card-frente'));
+  // Fase D: cartões e revisão espaçada (cartões criados automaticamente).
+  // Espera o preparo automático dos cartões terminar (evita corrida no teste).
+  await page.waitForFunction(() => new Promise((res) => {
+    const r = indexedDB.open('kestlerium');
+    r.onsuccess = () => { try { const req = r.result.transaction('cards', 'readonly').objectStore('cards').count(); req.onsuccess = () => res(req.result > 0); req.onerror = () => res(false); } catch { res(false); } };
+    r.onerror = () => res(false);
+  }), undefined, { timeout: 8000 });
+  await page.click('.barra-estudo button:has-text("Revisar cartões")');
+  const temCartaoRevisao = await page.waitForSelector('.card-revisao .card-frente', { timeout: 6000 }).then(() => true).catch(() => false);
+  checar('revisão mostra um cartão', temCartaoRevisao);
   await page.click('.card-revisao button:has-text("Mostrar resposta")');
   checar('resposta do cartão é revelada', await page.isVisible('.card-verso.revelado'));
   await page.click('.card-notas button:has-text("Bom")');
