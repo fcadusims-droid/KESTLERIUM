@@ -49,3 +49,30 @@ test('parseWikidataSearch extrai entidades', () => {
   assert.equal(r[0].description, 'imperador francês');
   assert.equal(r[0].url, 'http://www.wikidata.org/entity/Q517');
 });
+
+import { detectResearchRequests } from '../js/research.js';
+
+test('detectResearchRequests acha pedido do professor com termo conhecido', () => {
+  const segs = [
+    { index: 0, start: 5, end: 10, text: 'Isso é importante. Pesquisem sobre a Guerra Fria em casa.' },
+    { index: 1, start: 10, end: 15, text: 'A aula continua normalmente aqui.' },
+  ];
+  const terms = [{ name: 'Guerra Fria', norm: 'guerra fria', kind: 'nome', hidden: false }];
+  const r = detectResearchRequests(segs, terms);
+  assert.equal(r.length, 1);
+  assert.equal(r[0].termo, 'Guerra Fria');
+  assert.equal(r[0].start, 5);
+});
+
+test('detectResearchRequests pega nome próprio quando não é termo conhecido', () => {
+  const segs = [{ index: 0, start: 0, end: 5, text: 'Leiam Descartes para a próxima aula.' }];
+  const r = detectResearchRequests(segs, []);
+  assert.equal(r.length, 1);
+  assert.equal(r[0].termo, 'Descartes');
+});
+
+test('detectResearchRequests ignora "pesquisa" que não é pedido', () => {
+  const segs = [{ index: 0, start: 0, end: 5, text: 'A pesquisa mostra que os resultados melhoraram muito.' }];
+  const r = detectResearchRequests(segs, []);
+  assert.equal(r.length, 0);
+});

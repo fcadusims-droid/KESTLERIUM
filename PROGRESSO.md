@@ -303,3 +303,11 @@ já "leu" a aula toda), mas é **liberado conforme você avança no áudio**:
 - O mapa mental escurece os ramos que você ainda não ouviu.
 - O **quiz** só pergunta sobre o que você já ouviu (mais perguntas vão surgindo
   conforme você avança). Voltar no áudio não re-bloqueia o que já foi visto.
+
+### Pesquisa disparada pela fala da aula
+
+A pesquisa nas fontes deixou de ser um botão em cada termo. Agora o app **detecta
+na transcrição quando o professor pede para pesquisar algo** ("pesquise…",
+"procurem…", "leiam…") e só então oferece a pesquisa (no painel "🔎 Pesquisas
+pedidas"), já com o termo que ele citou e o horário. O app não pesquisa por conta
+própria. Se não for um termo conhecido, ele tenta pegar o nome próprio citado.

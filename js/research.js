@@ -1,6 +1,46 @@
 // Pesquisa em fontes externas GRATUITAS e sem chave: Wikipédia e Wikidata.
 // Só o termo pesquisado sai do navegador — nunca o áudio ou a transcrição.
 // Nunca afirmamos "verdadeiro/falso": mostramos o que a fonte diz, com o link.
+// A pesquisa só é oferecida quando o PROFESSOR, na fala da aula, pede para
+// pesquisar algo ("pesquise...", "procure...", "leiam..."). Detectamos isso na
+// transcrição; nada de pesquisa "por conta própria".
+
+import { normalize } from './format.js';
+
+// Encontra na transcrição os momentos em que o professor manda pesquisar algo.
+// Devolve [{ termo, frase, start }]. Função pura e testável.
+export function detectResearchRequests(segments, terms) {
+  const nomes = (terms || []).filter((t) => !t.hidden).map((t) => t.name).sort((a, b) => b.length - a.length);
+  const CUE = /(pesquis\w+|procur\w+|busqu\w+|consult\w+|leiam|leia\w*)/i;
+  const out = [];
+  const vistos = new Set();
+  for (const seg of segments) {
+    const frases = String(seg.text || '').split(/(?<=[.!?…])\s+/);
+    for (const frase of frases) {
+      const m = CUE.exec(frase);
+      if (!m) continue;
+      const depois = frase.slice(m.index + m[0].length);
+      const termo = extrairObjetoPesquisa(depois, nomes);
+      if (!termo) continue;
+      const norm = normalize(termo);
+      if (vistos.has(norm)) continue;
+      vistos.add(norm);
+      out.push({ termo, frase: frase.trim(), start: seg.start });
+    }
+  }
+  return out;
+}
+
+function extrairObjetoPesquisa(texto, nomes) {
+  const low = texto.toLowerCase();
+  // 1) Se um termo conhecido da aula aparece logo depois do "pesquise", usa ele.
+  for (const nome of nomes) { if (nome.length >= 3 && low.includes(nome.toLowerCase())) return nome; }
+  // 2) Senão, pega o nome próprio (capitalizado) após conectores.
+  const limpo = texto.replace(/^\s*(sobre|acerca de|a respeito de|por|o|a|os|as|em|no|na|um|uma)\s+/i, '');
+  const cap = limpo.match(/([A-ZÀ-Ý][A-Za-zÀ-ÿ'’-]*(?:\s+(?:de|da|do|das|dos|e\s)?\s*[A-ZÀ-Ý][A-Za-zÀ-ÿ'’-]*)*)/);
+  if (cap && cap[1].trim().length >= 3) return cap[1].trim();
+  return null;
+}
 
 // ---- Parte "pura" (sem internet): interpreta as respostas. Testável. ----
 

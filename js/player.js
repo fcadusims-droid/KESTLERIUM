@@ -11,7 +11,7 @@ import { criarCartoesDaAula, cartoesDaAula } from './cards.js';
 import { buildConceptGraph, layoutGraph, conceptGraphSVG, buildTimeline } from './diagrams.js';
 import { mindMap, acronyms, comparisons, scaffolds } from './memorize.js';
 import { painelMapaMental, painelSiglas, painelComparacoes, painelMnemonicos, painelAnotacoes, painelQuiz } from './studypanels.js';
-import { researchTerm, resolveOption } from './research.js';
+import { researchTerm, resolveOption, detectResearchRequests } from './research.js';
 import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
 import { MODELS, IDIOMAS } from './config.js';
 
@@ -65,6 +65,7 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   const atividades = gerarAtividades(capitulos, termos);
   const grafo = buildConceptGraph(segs, termos);
   const linhaTempo = buildTimeline(segs, termos);
+  const pedidosPesquisa = detectResearchRequests(segs, termos);
   let destacarTermos = true;
 
   // Preparo automático: garante que os cartões desta aula existam (sem botão).
@@ -100,15 +101,35 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   const mnemoPanel = el('div', { class: 'diagrama-panel' });
   const notasPanel = el('div', { class: 'diagrama-panel' });
   const quizPanel = el('div', { class: 'diagrama-panel' });
+  const pesquisaPanel = el('div', { class: 'diagrama-panel' });
 
   const barraEstudo = el('div', { class: 'barra-estudo' }, [
     el('button', { class: 'btn-mini btn-estudo', onclick: () => iniciarGuiado() }, '▶️ Estudo guiado'),
     el('button', { class: 'btn-mini', onclick: async () => { const aberto = quizPanel.classList.toggle('aberto'); if (aberto) await montarQuiz(); } }, '🎯 Quiz'),
     el('button', { class: 'btn-mini', onclick: () => { ctx.navigate('#/revisar'); } }, '🃏 Revisar cartões'),
     el('button', { class: 'btn-mini', onclick: () => togglePanel(notasPanel, () => notasPanel.appendChild(painelAnotacoes(lesson, lessons.salvarAula))) }, '📝 Anotações'),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(pesquisaPanel, montarPesquisas) }, `🔎 Pesquisas pedidas (${pedidosPesquisa.length})`),
     el('button', { class: 'btn-mini', onclick: () => alternarFoco() }, '🎯 Modo foco'),
     btnDestacar,
   ]);
+
+  function montarPesquisas() {
+    pesquisaPanel.appendChild(dica('Momentos em que a AULA pediu para você pesquisar algo. A pesquisa só aparece quando o professor pede — o app não pesquisa por conta própria.'));
+    if (!pedidosPesquisa.length) { pesquisaPanel.appendChild(el('p', { class: 'dica' }, 'O professor não pediu nenhuma pesquisa nesta aula.')); return; }
+    for (const p of pedidosPesquisa) {
+      pesquisaPanel.appendChild(el('div', { class: 'pesquisa-pedido' }, [
+        el('button', { class: 'seg-tempo', onclick: () => irPara(p.start) }, formatTime(p.start)),
+        el('span', { class: 'pesquisa-frase' }, `“${p.frase}”`),
+        el('button', { class: 'btn-mini', onclick: () => abrirPesquisaDeTermo(p.termo) }, `🔎 pesquisar “${p.termo}”`),
+      ]));
+    }
+  }
+  function abrirPesquisaDeTermo(nome) {
+    const norm = normalize(nome);
+    const occurrences = [];
+    for (const s of segs) if (normalize(s.text).includes(norm)) occurrences.push({ index: s.index, start: s.start });
+    modalPesquisa({ name: nome, occurrences }, segs, irPara);
+  }
   const barraEstudo2 = el('div', { class: 'barra-estudo' }, [
     el('button', { class: 'btn-mini', onclick: () => roteiro.classList.toggle('aberto') }, `🗺️ Roteiro (${capitulos.length})`),
     el('button', { class: 'btn-mini', onclick: () => togglePanel(mmPanel, () => { mmPanel.appendChild(painelMapaMental(mindMap(lesson.title, capitulos, termos), irPara)); atualizarLiberacao(); }) }, '🧠 Mapa mental'),
@@ -167,6 +188,7 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
       estudoGuiado,
       quizPanel,
       notasPanel,
+      pesquisaPanel,
       roteiro,
       mmPanel,
       mapaPanel,
@@ -660,7 +682,6 @@ async function painelTermos(lesson, segs, audio, ctx) {
         el('span', { class: 'termo-contagem', title: 'Quantas vezes apareceu' }, String(t.count)),
       ]);
       const controles = el('div', { class: 'termo-controles' }, [
-        el('button', { class: 'btn-mini', title: 'Pesquisar nas fontes', onclick: () => abrirPesquisa(t) }, '🔎 pesquisar'),
         el('button', { class: 'btn-mini', title: 'Renomear', onclick: () => renomearTermo(t) }, 'renomear'),
         el('button', { class: 'btn-mini', title: 'Juntar com outro termo', onclick: () => iniciarMerge(t) }, 'mesclar'),
         el('button', { class: 'btn-mini btn-mini-perigo', title: 'Apagar (falso positivo)', onclick: () => apagar(t) }, 'apagar'),
@@ -727,8 +748,6 @@ async function painelTermos(lesson, segs, audio, ctx) {
     pintarLista();
     toast('Termos recalculados.', 'sucesso');
   }
-
-  function abrirPesquisa(t) { modalPesquisa(t, segs, irPara); }
 
   pintarLista();
   pintarSugestoes();

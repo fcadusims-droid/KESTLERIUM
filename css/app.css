@@ -361,3 +361,7 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 .roteiro-item.bloqueado .roteiro-frase { filter: blur(4px); pointer-events: none; user-select: none; }
 .mm-ramo.bloqueado { opacity: .4; }
 .mm-ramo.bloqueado .mm-filhos { filter: blur(3px); pointer-events: none; }
+
+/* --- Pesquisa disparada pela fala da aula --- */
+.pesquisa-pedido { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; background: var(--superficie-2); border-radius: 8px; padding: 8px 10px; margin: 6px 0; }
+.pesquisa-frase { flex: 1; color: var(--texto-suave); font-style: italic; min-width: 180px; }

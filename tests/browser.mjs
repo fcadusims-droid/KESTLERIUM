@@ -72,7 +72,7 @@ try {
     const segs = [
       { lessonId: 'aula_test', index: 0, start: 0, end: 6, text: 'A Revolução Francesa começou em 1789.' },
       { lessonId: 'aula_test', index: 1, start: 6, end: 12, text: 'Napoleão Bonaparte subiu ao poder depois da revolução.' },
-      { lessonId: 'aula_test', index: 2, start: 12, end: 18, text: 'A revolução mudou toda a Europa daquela época.' },
+      { lessonId: 'aula_test', index: 2, start: 12, end: 18, text: 'A revolução mudou toda a Europa daquela época. Pesquisem sobre a Europa.' },
     ];
     for (const s of segs) tx.objectStore('segments').put(s);
     tx.objectStore('audio').put({ lessonId: 'aula_test', blob: makeWav(20), fileName: 'teste.wav', type: 'audio/wav' });
@@ -164,10 +164,13 @@ try {
     checar('estudo guiado chega ao fim', fim);
   }
 
-  // Abre a pesquisa de um termo (só valida que o modal abre).
-  await page.click('.painel-termos .termo:first-child button:has-text("pesquisar")');
+  // Pesquisa só quando o professor pede (detectada na fala da aula).
+  await page.click('.barra-estudo button:has-text("Pesquisas pedidas")');
+  await page.waitForSelector('.pesquisa-pedido', { timeout: 4000 });
+  checar('pesquisa aparece só quando a aula pede', (await page.locator('.pesquisa-pedido').count()) >= 1);
+  await page.click('.pesquisa-pedido button:has-text("pesquisar")');
   await page.waitForSelector('.modal-largo', { timeout: 5000 });
-  checar('modal de pesquisa abre', await page.isVisible('.colunas-pesquisa'));
+  checar('modal de pesquisa abre a partir do pedido da aula', await page.isVisible('.colunas-pesquisa'));
   checar('mostra "O que a aula disse"', (await page.textContent('.lado-aula')).includes('O que a aula disse'));
   await page.click('.modal-topo button');
 
