@@ -90,6 +90,6 @@ test('gerarAtividades cobre todos os capítulos com tipos válidos', () => {
   const terms = [{ name: 'Revolução Francesa', norm: 'revolucao francesa', kind: 'nome', count: 3 }];
   const ativs = gerarAtividades(caps, terms);
   assert.equal(ativs.length, 2);
-  const validos = ['recuperacao', 'pergunta', 'previsao', 'autoexplicacao'];
+  const validos = ['recuperacao', 'pergunta', 'previsao', 'autoexplicacao', 'elaborativa', 'feynman'];
   for (const a of ativs) assert.ok(validos.includes(a.tipo));
 });

@@ -7,8 +7,10 @@ import { formatTime, escapeHtml, humanDuration, makeId, normalize } from './form
 import { searchSegments, segmentIndexAtTime, highlight } from './search.js';
 import { mergeTerms, suggestMerges } from './entities.js';
 import { chapterize, keyTerms, makeTermHighlighter, gerarAtividades } from './study.js';
-import { criarCartoesDaAula } from './cards.js';
+import { criarCartoesDaAula, cartoesDaAula } from './cards.js';
 import { buildConceptGraph, layoutGraph, conceptGraphSVG, buildTimeline } from './diagrams.js';
+import { mindMap, acronyms, comparisons, scaffolds } from './memorize.js';
+import { painelMapaMental, painelSiglas, painelComparacoes, painelMnemonicos, painelAnotacoes, painelQuiz } from './studypanels.js';
 import { researchTerm, resolveOption } from './research.js';
 import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
 import { MODELS, IDIOMAS } from './config.js';
@@ -65,6 +67,11 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   const linhaTempo = buildTimeline(segs, termos);
   let destacarTermos = true;
 
+  // Preparo automático: garante que os cartões desta aula existam (sem botão).
+  criarCartoesDaAula(lessonId, segs, termos, capitulos)
+    .then(() => { if (ctx.atualizarContadores) ctx.atualizarContadores(); })
+    .catch(() => {});
+
   // Para sincronizar os diagramas com o áudio: quais termos há em cada trecho,
   // e onde cada termo aparece pela primeira vez (para clicar e ouvir).
   const termosPorSeg = new Map();
@@ -87,22 +94,40 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   const estudoGuiado = el('div', { class: 'estudo-guiado' });
   const mapaPanel = el('div', { class: 'diagrama-panel' });
   const linhaPanel = el('div', { class: 'diagrama-panel' });
+  const mmPanel = el('div', { class: 'diagrama-panel' });
+  const siglasPanel = el('div', { class: 'diagrama-panel' });
+  const compPanel = el('div', { class: 'diagrama-panel' });
+  const mnemoPanel = el('div', { class: 'diagrama-panel' });
+  const notasPanel = el('div', { class: 'diagrama-panel' });
+  const quizPanel = el('div', { class: 'diagrama-panel' });
+
   const barraEstudo = el('div', { class: 'barra-estudo' }, [
     el('button', { class: 'btn-mini btn-estudo', onclick: () => iniciarGuiado() }, '▶️ Estudo guiado'),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(quizPanel, (p) => painelQuiz(p, [], irPara), montarQuiz) }, '🎯 Quiz'),
+    el('button', { class: 'btn-mini', onclick: () => { ctx.navigate('#/revisar'); } }, '🃏 Revisar cartões'),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(notasPanel, () => notasPanel.appendChild(painelAnotacoes(lesson, lessons.salvarAula))) }, '📝 Anotações'),
     el('button', { class: 'btn-mini', onclick: () => alternarFoco() }, '🎯 Modo foco'),
     btnDestacar,
-    el('button', { class: 'btn-mini', onclick: () => roteiro.classList.toggle('aberto') }, `🗺️ Roteiro (${capitulos.length})`),
-    el('button', { class: 'btn-mini', onclick: () => toggleMapa() }, `🕸️ Mapa (${grafo.nodes.length})`),
-    el('button', { class: 'btn-mini', onclick: () => toggleLinha() }, `📅 Linha do tempo (${linhaTempo.length})`),
-    el('button', { class: 'btn-mini', onclick: async (e) => {
-      e.target.disabled = true;
-      const cs = await criarCartoesDaAula(lessonId, segs, termos, capitulos, { recriar: true });
-      if (ctx.atualizarContadores) ctx.atualizarContadores();
-      toast(`${cs.length} cartão(ões) criados. Vá em "Revisar" para estudar.`, 'sucesso');
-      e.target.disabled = false;
-      ctx.navigate('#/revisar');
-    } }, '🃏 Criar cartões'),
   ]);
+  const barraEstudo2 = el('div', { class: 'barra-estudo' }, [
+    el('button', { class: 'btn-mini', onclick: () => roteiro.classList.toggle('aberto') }, `🗺️ Roteiro (${capitulos.length})`),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(mmPanel, () => mmPanel.appendChild(painelMapaMental(mindMap(lesson.title, capitulos, termos), irPara))) }, '🧠 Mapa mental'),
+    el('button', { class: 'btn-mini', onclick: () => toggleMapa() }, `🕸️ Mapa de conexões (${grafo.nodes.length})`),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(siglasPanel, () => siglasPanel.appendChild(painelSiglas(acronyms(capitulos, termos), irPara))) }, '🔤 Siglas'),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(compPanel, () => compPanel.appendChild(painelComparacoes(comparisons(segs, termos, grafo), irPara))) }, '⚖️ Comparar'),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(mnemoPanel, () => mnemoPanel.appendChild(painelMnemonicos(scaffolds(capitulos, termos), irPara))) }, '🏛️ Mnemônicos'),
+    el('button', { class: 'btn-mini', onclick: () => toggleLinha() }, `📅 Linha do tempo (${linhaTempo.length})`),
+  ]);
+
+  // Liga/desliga um painel, montando o conteúdo só na primeira vez.
+  function togglePanel(panel, montar, montarQuizFn) {
+    if (!panel.dataset.montado) { (montarQuizFn || montar)(); panel.dataset.montado = '1'; }
+    panel.classList.toggle('aberto');
+  }
+  async function montarQuiz() {
+    const cs = await cartoesDaAula(lessonId);
+    painelQuiz(quizPanel, cs, irPara);
+  }
 
   // Controle de ritmo: velocidade (com aviso) e repetir o trecho atual.
   let avisouVelocidade = false;
@@ -132,9 +157,16 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
       el('div', { class: 'player-caixa' }, [audio, controlesAudio]),
       construirPreTreino(termos, irPara),
       barraEstudo,
+      barraEstudo2,
       estudoGuiado,
+      quizPanel,
+      notasPanel,
       roteiro,
+      mmPanel,
       mapaPanel,
+      siglasPanel,
+      compPanel,
+      mnemoPanel,
       linhaPanel,
       el('div', { class: 'barra-busca' }, [busca]),
       resultadosBusca,
@@ -435,6 +467,19 @@ function cardAtividade(at, cap, i, total, h) {
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') verificar(); });
     card.appendChild(el('div', { class: 'atividade-linha' }, [input, el('button', { class: 'btn btn-secundario', onclick: verificar }, 'Verificar')]));
     card.appendChild(feedback);
+  } else if (at.tipo === 'elaborativa') {
+    card.appendChild(el('h4', {}, '🤔 Pergunte "por quê?"'));
+    card.appendChild(el('p', {}, 'Responda para você mesmo: Por que isto acontece? Como se liga ao que veio antes? Qual a causa e qual a consequência? Ligar as ideias fixa muito mais do que decorar solto.'));
+    const area = el('div', { class: 'atividade-revelar' });
+    card.appendChild(el('button', { class: 'btn btn-secundario', onclick: () => { area.innerHTML = ''; area.appendChild(el('p', { class: 'dica' }, 'Frase desta parte para pensar em cima:')); area.appendChild(revelarTrecho()); } }, 'Mostrar o trecho'));
+    card.appendChild(area);
+  } else if (at.tipo === 'feynman') {
+    card.appendChild(el('h4', {}, '👶 Explique como para uma criança (Feynman)'));
+    card.appendChild(el('p', {}, 'Explique esta parte da forma mais simples possível, como se a pessoa nunca tivesse ouvido falar disso. Onde você travar ou usar palavra difícil, é aí que você ainda não entendeu — volte ao trecho e tente de novo.'));
+    const area = el('div', { class: 'atividade-revelar' });
+    card.appendChild(el('textarea', { class: 'campo', rows: '3', placeholder: 'Escreva sua explicação simples…' }));
+    card.appendChild(el('button', { class: 'btn btn-secundario', onclick: () => { area.innerHTML = ''; area.appendChild(el('p', { class: 'dica' }, 'Confira com a frase desta parte:')); area.appendChild(revelarTrecho()); } }, 'Mostrar o trecho'));
+    card.appendChild(area);
   } else {
     card.appendChild(el('h4', {}, '🗣️ Explique com suas palavras'));
     card.appendChild(el('p', {}, 'Explique esta parte como se ensinasse alguém. Falar com as próprias palavras revela o que você realmente entendeu.'));

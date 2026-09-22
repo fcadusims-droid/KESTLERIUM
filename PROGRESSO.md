@@ -276,3 +276,20 @@ reserva em pedaços (que "respira" entre eles) caso o navegador não suporte.
 Validei com a transcrição real de um trecho da sua aula: resultado idêntico e
 correto (0,30x a duração). O restante da otimização (aulas muito longas na tela)
 vem depois, como combinado.
+
+### Kestlerium 3.0 — Memorização automática (em andamento)
+
+Novas técnicas de memorização, montadas automaticamente da própria aula e
+entregues prontas (sem botão de ativar). Cartões passam a ser criados sozinhos
+ao terminar a transcrição e ao abrir a aula.
+
+- **Estudo guiado com dificuldade progressiva** e novos passos: questionamento
+  elaborativo ("por quê?") e Feynman ("explique como para uma criança").
+- **Mapa mental** (aula → capítulos → termos), **siglas mnemônicas** (iniciais
+  dos termos), **comparação de conceitos** (lado a lado) e **quiz** (teste rápido).
+- **Anotações** por aula (salvas) e **andaimes honestos** para palácio da memória
+  / imagens / histórias (o app prepara os termos na ordem; você cria).
+- Técnicas já existentes (active recall, repetição espaçada, flashcards,
+  autoexplicação, grifos, mapa conceitual, resumo, chunking) foram tornadas
+  automáticas/sempre-ligadas.
+- Testes: 42 de lógica e 31 de navegador, todos passando.

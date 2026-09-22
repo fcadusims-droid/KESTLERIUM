@@ -6,7 +6,8 @@ import { TranscriptionJob } from './transcriber.js';
 import { renderAula } from './player.js';
 import { renderBiblioteca, renderTermoGlobal, renderIndiceTermos } from './views.js';
 import { renderRevisao } from './review.js';
-import { contarVencidos } from './cards.js';
+import { contarVencidos, criarCartoesDaAula } from './cards.js';
+import { chapterize } from './study.js';
 import { renderAjuda } from './help.js';
 import { el, toast } from './ui.js';
 
@@ -40,7 +41,17 @@ async function iniciarTranscricao(lessonId, handlers) {
     onModelProgress: (d) => notificar(lessonId, 'onModelProgress', d),
     onDevice: (d) => notificar(lessonId, 'onDevice', d),
     onSegments: (segs) => notificar(lessonId, 'onSegments', segs),
-    onDone: (l) => { st.ativo = false; notificar(lessonId, 'onDone', l); },
+    onDone: async (l) => {
+      st.ativo = false;
+      // Preparo automático: gera termos e cartões assim que a transcrição termina.
+      try {
+        const segs = await lessons.obterSegmentos(l.id);
+        const termos = await lessons.gerarTermos(l.id);
+        await criarCartoesDaAula(l.id, segs, termos, chapterize(segs, termos));
+      } catch { /* segue mesmo se falhar */ }
+      notificar(lessonId, 'onDone', l);
+      atualizarContadores();
+    },
     onError: (e) => { st.ativo = false; notificar(lessonId, 'onError', e); toast('A transcrição falhou: ' + (e && e.message || e), 'erro'); },
   });
   st.job = job;

@@ -111,7 +111,7 @@ try {
   await page.click('.barra-estudo button:has-text("Modo foco")');
 
   // Fase E: mapa conceitual e linha do tempo.
-  await page.click('.barra-estudo button:has-text("Mapa")');
+  await page.click('.barra-estudo button:has-text("Mapa de conexões")');
   await page.waitForSelector('.grafo-svg', { timeout: 4000 });
   checar('mapa conceitual desenha os nós', (await page.locator('.no-grafo').count()) >= 2);
   await page.click('.barra-estudo button:has-text("Linha do tempo")');
@@ -122,6 +122,20 @@ try {
   await page.click('.controles-audio button:has-text("1.5x")');
   const vel = await page.evaluate(() => document.querySelector('audio.player').playbackRate);
   checar('velocidade do áudio muda para 1.5x', Math.abs(vel - 1.5) < 0.01);
+
+  // 3.0: mecânicas de memorização automáticas.
+  await page.click('.barra-estudo button:has-text("Mapa mental")');
+  await page.waitForSelector('.mm-centro', { timeout: 4000 });
+  checar('mapa mental mostra centro e ramos', await page.isVisible('.mm-centro'));
+  await page.click('.barra-estudo button:has-text("Siglas")');
+  await page.waitForSelector('.sigla-letras', { timeout: 4000 }).catch(() => {});
+  checar('siglas geradas a partir dos termos', (await page.locator('.sigla-letras').count()) >= 1);
+  await page.click('.barra-estudo button:has-text("Anotações")');
+  await page.waitForSelector('.diagrama-panel textarea', { timeout: 4000 });
+  checar('anotações têm campo de texto', (await page.locator('.diagrama-panel textarea').count()) >= 1);
+  await page.click('.barra-estudo button:has-text("Quiz")');
+  const quizOk = await page.waitForSelector('.card-frente', { timeout: 5000 }).then(() => true).catch(() => false);
+  checar('quiz mostra uma pergunta (cartões automáticos)', quizOk);
 
   // Fase C: estudo guiado — inicia e simula chegar ao fim do capítulo.
   await page.waitForFunction(() => { const a = document.querySelector('audio.player'); return a && !Number.isNaN(a.duration) && a.duration > 15; }, undefined, { timeout: 8000 }).catch(() => {});
@@ -154,10 +168,16 @@ try {
   const textoCorrigido = await page.textContent('.transcricao .seg:first-child .seg-texto');
   checar('correção de trecho é salva', textoCorrigido === 'Texto corrigido pelo teste.');
 
-  // Fase D: cartões e revisão espaçada.
-  await page.click('.barra-estudo button:has-text("Criar cartões")');
+  // Fase D: cartões e revisão espaçada (cartões criados automaticamente).
+  // Espera o preparo automático dos cartões terminar (evita corrida no teste).
+  await page.waitForFunction(() => new Promise((res) => {
+    const r = indexedDB.open('kestlerium');
+    r.onsuccess = () => { try { const req = r.result.transaction('cards', 'readonly').objectStore('cards').count(); req.onsuccess = () => res(req.result > 0); req.onerror = () => res(false); } catch { res(false); } };
+    r.onerror = () => res(false);
+  }), undefined, { timeout: 8000 });
+  await page.click('.barra-estudo button:has-text("Revisar cartões")');
   await page.waitForSelector('.card-revisao', { timeout: 6000 });
-  checar('revisão mostra um cartão', await page.isVisible('.card-frente'));
+  checar('revisão mostra um cartão', (await page.locator('.card-revisao .card-frente').count()) >= 1);
   await page.click('.card-revisao button:has-text("Mostrar resposta")');
   checar('resposta do cartão é revelada', await page.isVisible('.card-verso.revelado'));
   await page.click('.card-notas button:has-text("Bom")');
