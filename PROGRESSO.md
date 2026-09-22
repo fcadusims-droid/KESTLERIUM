@@ -293,3 +293,13 @@ ao terminar a transcrição e ao abrir a aula.
   autoexplicação, grifos, mapa conceitual, resumo, chunking) foram tornadas
   automáticas/sempre-ligadas.
 - Testes: 42 de lógica e 31 de navegador, todos passando.
+
+### Liberação progressiva conforme o player
+
+O material de estudo é criado inteiro assim que a aula é transcrita (porque o app
+já "leu" a aula toda), mas é **liberado conforme você avança no áudio**:
+- Os capítulos futuros aparecem **bloqueados (🔒)** e com a frase-chave borrada;
+  desbloqueiam quando você chega neles (com um aviso "🔓 Novo trecho liberado").
+- O mapa mental escurece os ramos que você ainda não ouviu.
+- O **quiz** só pergunta sobre o que você já ouviu (mais perguntas vão surgindo
+  conforme você avança). Voltar no áudio não re-bloqueia o que já foi visto.

@@ -9,7 +9,7 @@ export function painelMapaMental(mind, irPara) {
   box.appendChild(el('div', { class: 'mm-centro' }, mind.centro));
   const ramos = el('div', { class: 'mm-ramos' });
   for (const r of mind.ramos) {
-    ramos.appendChild(el('div', { class: 'mm-ramo' }, [
+    ramos.appendChild(el('div', { class: 'mm-ramo', 'data-start': r.start }, [
       el('button', { class: 'mm-ramo-titulo', onclick: () => irPara(r.start) }, [el('span', {}, r.titulo), el('span', { class: 'seg-tempo' }, formatTime(r.start))]),
       el('div', { class: 'mm-filhos' }, r.filhos.map((f) => el('button', { class: 'chip-tempo', onclick: () => irPara(f.start) }, f.name))),
     ]));

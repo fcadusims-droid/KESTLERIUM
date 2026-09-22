@@ -353,3 +353,11 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 .comparacao-frase { font-style: italic; color: var(--texto-suave); margin: 6px 0; }
 .comparacao-vs { font-weight: 800; color: var(--texto-suave); }
 .mnemo-lista { margin: 6px 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
+
+/* --- Liberação progressiva conforme o player --- */
+.roteiro-item .cadeado { display: none; margin-left: 4px; }
+.roteiro-item.bloqueado { opacity: .6; }
+.roteiro-item.bloqueado .cadeado { display: inline; }
+.roteiro-item.bloqueado .roteiro-frase { filter: blur(4px); pointer-events: none; user-select: none; }
+.mm-ramo.bloqueado { opacity: .4; }
+.mm-ramo.bloqueado .mm-filhos { filter: blur(3px); pointer-events: none; }

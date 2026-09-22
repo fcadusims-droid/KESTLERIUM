@@ -133,9 +133,21 @@ try {
   await page.click('.barra-estudo button:has-text("Anotações")');
   await page.waitForSelector('.diagrama-panel textarea', { timeout: 4000 });
   checar('anotações têm campo de texto', (await page.locator('.diagrama-panel textarea').count()) >= 1);
+  // Espera os cartões automáticos e o áudio carregar.
+  await page.waitForFunction(() => new Promise((res) => { const r = indexedDB.open('kestlerium'); r.onsuccess = () => { try { const q = r.result.transaction('cards', 'readonly').objectStore('cards').count(); q.onsuccess = () => res(q.result > 0); q.onerror = () => res(false); } catch { res(false); } }; r.onerror = () => res(false); }), undefined, { timeout: 8000 });
+  await page.waitForFunction(() => { const a = document.querySelector('audio.player'); return a && !Number.isNaN(a.duration) && a.duration > 15; }, undefined, { timeout: 8000 }).catch(() => {});
+  const parseTotal = (s) => Number((String(s).match(/de (\d+)/) || [])[1] || 0);
   await page.click('.barra-estudo button:has-text("Quiz")');
-  const quizOk = await page.waitForSelector('.card-frente', { timeout: 5000 }).then(() => true).catch(() => false);
-  checar('quiz mostra uma pergunta (cartões automáticos)', quizOk);
+  await page.waitForSelector('.card-frente', { timeout: 5000 });
+  const totalAntes = parseTotal(await page.textContent('.card-tipo'));
+  checar('quiz mostra uma pergunta (cartões automáticos)', totalAntes >= 1);
+  // Avança o player e reabre: devem liberar mais perguntas (liberação progressiva).
+  await page.evaluate(async () => { const a = document.querySelector('audio.player'); a.currentTime = 19.5; await new Promise((r) => setTimeout(r, 150)); a.dispatchEvent(new Event('timeupdate')); });
+  await page.click('.barra-estudo button:has-text("Quiz")'); // fecha
+  await page.click('.barra-estudo button:has-text("Quiz")'); // reabre (re-renderiza)
+  await page.waitForFunction((antes) => { const el = document.querySelector('.card-tipo'); if (!el) return false; const m = el.textContent.match(/de (\d+)/); return m && Number(m[1]) > antes; }, totalAntes, { timeout: 5000 }).catch(() => {});
+  const totalDepois = parseTotal(await page.textContent('.card-tipo'));
+  checar(`quiz libera mais perguntas conforme o player avança (${totalAntes} -> ${totalDepois})`, totalDepois > totalAntes);
 
   // Fase C: estudo guiado — inicia e simula chegar ao fim do capítulo.
   await page.waitForFunction(() => { const a = document.querySelector('audio.player'); return a && !Number.isNaN(a.duration) && a.duration > 15; }, undefined, { timeout: 8000 }).catch(() => {});
@@ -176,8 +188,8 @@ try {
     r.onerror = () => res(false);
   }), undefined, { timeout: 8000 });
   await page.click('.barra-estudo button:has-text("Revisar cartões")');
-  await page.waitForSelector('.card-revisao', { timeout: 6000 });
-  checar('revisão mostra um cartão', (await page.locator('.card-revisao .card-frente').count()) >= 1);
+  const temCartaoRevisao = await page.waitForSelector('.card-revisao .card-frente', { timeout: 6000 }).then(() => true).catch(() => false);
+  checar('revisão mostra um cartão', temCartaoRevisao);
   await page.click('.card-revisao button:has-text("Mostrar resposta")');
   checar('resposta do cartão é revelada', await page.isVisible('.card-verso.revelado'));
   await page.click('.card-notas button:has-text("Bom")');

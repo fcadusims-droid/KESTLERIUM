@@ -103,7 +103,7 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
 
   const barraEstudo = el('div', { class: 'barra-estudo' }, [
     el('button', { class: 'btn-mini btn-estudo', onclick: () => iniciarGuiado() }, '▶️ Estudo guiado'),
-    el('button', { class: 'btn-mini', onclick: () => togglePanel(quizPanel, (p) => painelQuiz(p, [], irPara), montarQuiz) }, '🎯 Quiz'),
+    el('button', { class: 'btn-mini', onclick: async () => { const aberto = quizPanel.classList.toggle('aberto'); if (aberto) await montarQuiz(); } }, '🎯 Quiz'),
     el('button', { class: 'btn-mini', onclick: () => { ctx.navigate('#/revisar'); } }, '🃏 Revisar cartões'),
     el('button', { class: 'btn-mini', onclick: () => togglePanel(notasPanel, () => notasPanel.appendChild(painelAnotacoes(lesson, lessons.salvarAula))) }, '📝 Anotações'),
     el('button', { class: 'btn-mini', onclick: () => alternarFoco() }, '🎯 Modo foco'),
@@ -111,7 +111,7 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   ]);
   const barraEstudo2 = el('div', { class: 'barra-estudo' }, [
     el('button', { class: 'btn-mini', onclick: () => roteiro.classList.toggle('aberto') }, `🗺️ Roteiro (${capitulos.length})`),
-    el('button', { class: 'btn-mini', onclick: () => togglePanel(mmPanel, () => mmPanel.appendChild(painelMapaMental(mindMap(lesson.title, capitulos, termos), irPara))) }, '🧠 Mapa mental'),
+    el('button', { class: 'btn-mini', onclick: () => togglePanel(mmPanel, () => { mmPanel.appendChild(painelMapaMental(mindMap(lesson.title, capitulos, termos), irPara)); atualizarLiberacao(); }) }, '🧠 Mapa mental'),
     el('button', { class: 'btn-mini', onclick: () => toggleMapa() }, `🕸️ Mapa de conexões (${grafo.nodes.length})`),
     el('button', { class: 'btn-mini', onclick: () => togglePanel(siglasPanel, () => siglasPanel.appendChild(painelSiglas(acronyms(capitulos, termos), irPara))) }, '🔤 Siglas'),
     el('button', { class: 'btn-mini', onclick: () => togglePanel(compPanel, () => compPanel.appendChild(painelComparacoes(comparisons(segs, termos, grafo), irPara))) }, '⚖️ Comparar'),
@@ -125,7 +125,13 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
     panel.classList.toggle('aberto');
   }
   async function montarQuiz() {
-    const cs = await cartoesDaAula(lessonId);
+    const todos = await cartoesDaAula(lessonId);
+    const cs = todos.filter((c) => (c.start || 0) <= tempoMax + 1);
+    if (!cs.length && todos.length) {
+      quizPanel.innerHTML = '';
+      quizPanel.appendChild(dica('As perguntas são liberadas conforme você ouve a aula. Toque um pouco e volte aqui.'));
+      return;
+    }
     painelQuiz(quizPanel, cs, irPara);
   }
 
@@ -345,10 +351,31 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
     audio.play().catch(() => {});
   }
 
+  // Liberação progressiva: o material já existe, mas só é liberado conforme o
+  // player avança. Guardamos o ponto máximo já alcançado (voltar não re-bloqueia).
+  let tempoMax = 0;
+  let capsLiberados = capitulos.filter((c) => c.startSec <= 0.1).length;
+  function atualizarLiberacao() {
+    tempoMax = Math.max(tempoMax, audio.currentTime);
+    const container = layout;
+    container.querySelectorAll('.roteiro-item[data-start], .mm-ramo[data-start]').forEach((elm) => {
+      const st = Number(elm.getAttribute('data-start'));
+      elm.classList.toggle('bloqueado', st > tempoMax + 0.1);
+    });
+    const liberadosAgora = capitulos.filter((c) => c.startSec <= tempoMax + 0.1).length;
+    if (liberadosAgora > capsLiberados) {
+      capsLiberados = liberadosAgora;
+      toast('🔓 Novo trecho de estudo liberado.', 'info', 2500);
+    }
+  }
+
+  atualizarLiberacao(); // estado inicial dos bloqueios
+
   // Destaca o trecho atual conforme o áudio toca.
   let atual = -1;
   audio.addEventListener('timeupdate', () => {
     checarLimiteGuiado();
+    atualizarLiberacao();
     const idx = segmentIndexAtTime(segs, audio.currentTime);
     if (idx !== atual && idx >= 0) {
       if (segEls[atual]) segEls[atual].classList.remove('seg-atual');
@@ -416,10 +443,11 @@ function construirRoteiro(capitulos, irPara) {
   box.appendChild(dica('Roteiro montado automaticamente. Cada trecho mostra uma frase da PRÓPRIA aula (com o horário) — o app não inventa resumo.'));
   if (!capitulos.length) { box.appendChild(el('p', { class: 'dica' }, 'Sem capítulos.')); return box; }
   capitulos.forEach((c, i) => {
-    box.appendChild(el('div', { class: 'roteiro-item' }, [
+    box.appendChild(el('div', { class: 'roteiro-item', 'data-start': c.startSec }, [
       el('button', { class: 'roteiro-titulo', onclick: () => irPara(c.startSec) }, [
         el('span', { class: 'roteiro-num' }, String(i + 1)),
         el('span', {}, c.titulo || `Parte ${i + 1}`),
+        el('span', { class: 'cadeado', title: 'Libera quando você chegar aqui' }, '🔒'),
         el('span', { class: 'seg-tempo' }, formatTime(c.startSec)),
       ]),
       el('button', { class: 'roteiro-frase', title: `Ouvir (${formatTime(c.fraseChave.start)})`, onclick: () => irPara(c.fraseChave.start) }, [
