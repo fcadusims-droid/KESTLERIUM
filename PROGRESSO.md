@@ -264,3 +264,15 @@ tempo que acendem com o áudio — tudo **fundamentado na própria aula** (o app
 inventa significado) e **100% no navegador, sem API paga**. A "interpretação
 avançada" com IA local (opcional, para PC forte) fica registrada como próximo
 passo possível.
+
+### Correção de travamento na transcrição (crítico)
+
+Você relatou que o navegador **travou** ao enviar um arquivo e começar a
+transcrever. A causa: o preparo do áudio (juntar os canais e reamostrar ~65
+milhões de amostras numa aula de 1 h) rodava na thread principal, congelando a
+tela. Corrigido: agora o próprio motor de áudio do navegador
+(OfflineAudioContext) faz isso de forma nativa, sem travar; há um método de
+reserva em pedaços (que "respira" entre eles) caso o navegador não suporte.
+Validei com a transcrição real de um trecho da sua aula: resultado idêntico e
+correto (0,30x a duração). O restante da otimização (aulas muito longas na tela)
+vem depois, como combinado.
