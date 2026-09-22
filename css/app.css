@@ -311,3 +311,22 @@ mark { background: var(--destaque); color: inherit; border-radius: 3px; padding:
 .nota-dificil { background: #d98324; }
 .nota-bom { background: var(--primaria); }
 .nota-facil { background: var(--sucesso); }
+
+/* --- Fase E: diagramas (mapa conceitual e linha do tempo) --- */
+.diagrama-panel { display: none; background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 14px; margin: 6px 0 10px; }
+.diagrama-panel.aberto { display: block; }
+.grafo-wrap { width: 100%; overflow: auto; }
+.grafo-svg { width: 100%; height: auto; max-height: 460px; display: block; }
+.no-grafo { cursor: pointer; }
+.no-grafo circle { transition: r .15s, stroke-width .15s; }
+.no-grafo.aceso circle { stroke: var(--texto); stroke-width: 3; fill-opacity: 1; }
+.no-grafo:hover circle { stroke: var(--primaria); stroke-width: 2; }
+.grafo-rotulo { font-size: 12px; fill: var(--texto); paint-order: stroke; stroke: var(--superficie); stroke-width: 3px; stroke-linejoin: round; }
+.no-grafo.aceso .grafo-rotulo { font-weight: 700; }
+
+.linha-tempo { display: flex; flex-direction: column; gap: 6px; border-left: 3px solid var(--primaria); padding-left: 12px; margin-top: 8px; }
+.linha-evento { display: flex; gap: 10px; align-items: baseline; text-align: left; background: var(--superficie-2); border: 1px solid transparent; border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit; color: var(--texto); }
+.linha-evento:hover { border-color: var(--primaria); }
+.linha-evento.aceso { border-color: var(--primaria); background: var(--primaria-clara); }
+.linha-data { font-weight: 700; color: #6b45c9; white-space: nowrap; }
+.linha-texto { flex: 1; color: var(--texto-suave); }

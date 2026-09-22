@@ -231,3 +231,18 @@ chave) fica como opção futura, para computadores mais fortes.
   que você erra volta logo. O menu mostra quantos cartões estão para revisar.
 - Os cartões entram no backup. Testes: 33 de lógica (novos: geração e
   agendamento) e o navegador cria cartões, revela e avalia (24 verificações).
+
+### Fase E — Mapa Conceitual e Linha do Tempo (pronta e testada)
+
+Aqui entram os "diagramas automáticos" que você sugeriu, montados da própria aula
+e **sincronizados com o áudio** (o "narração + gráficos" da ciência, usando a voz
+da sua aula como narração):
+
+- **Mapa conceitual:** um grafo onde os termos aparecem ligados quando são ditos
+  no mesmo trecho. As bolinhas **acendem conforme o áudio fala**; clicar numa leva
+  ao ponto da aula onde ela aparece.
+- **Linha do tempo:** as datas encontradas na aula, em ordem, cada uma com uma
+  frase real da aula e o horário. O evento acende quando o áudio chega nele.
+- Também resolve o item opcional do "grafo visual" que tinha ficado de fora.
+- Testes: 38 de lógica (novos: montar o grafo, posicionar, linha do tempo, parse
+  de anos/séculos) e o navegador desenha o mapa e lista a linha do tempo.

@@ -110,6 +110,14 @@ try {
   checar('modo foco é ativado', await page.isVisible('.aula-layout.foco'));
   await page.click('.barra-estudo button:has-text("Modo foco")');
 
+  // Fase E: mapa conceitual e linha do tempo.
+  await page.click('.barra-estudo button:has-text("Mapa")');
+  await page.waitForSelector('.grafo-svg', { timeout: 4000 });
+  checar('mapa conceitual desenha os nós', (await page.locator('.no-grafo').count()) >= 2);
+  await page.click('.barra-estudo button:has-text("Linha do tempo")');
+  await page.waitForSelector('.linha-tempo', { timeout: 4000 });
+  checar('linha do tempo lista as datas', (await page.locator('.linha-evento').count()) >= 1);
+
   // Fase C: estudo guiado — inicia e simula chegar ao fim do capítulo.
   await page.waitForFunction(() => { const a = document.querySelector('audio.player'); return a && !Number.isNaN(a.duration) && a.duration > 15; }, undefined, { timeout: 8000 }).catch(() => {});
   await page.click('.barra-estudo button:has-text("Estudo guiado")');

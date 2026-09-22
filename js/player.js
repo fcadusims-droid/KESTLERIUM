@@ -8,6 +8,7 @@ import { searchSegments, segmentIndexAtTime, highlight } from './search.js';
 import { mergeTerms, suggestMerges } from './entities.js';
 import { chapterize, keyTerms, makeTermHighlighter, gerarAtividades } from './study.js';
 import { criarCartoesDaAula } from './cards.js';
+import { buildConceptGraph, layoutGraph, conceptGraphSVG, buildTimeline } from './diagrams.js';
 import { researchTerm, resolveOption } from './research.js';
 import { el, toast, confirmDialog, promptDialog, dica, ajuda } from './ui.js';
 import { MODELS, IDIOMAS } from './config.js';
@@ -60,7 +61,21 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   const highlighter = makeTermHighlighter(termos);
   const capitulos = chapterize(segs, termos);
   const atividades = gerarAtividades(capitulos, termos);
+  const grafo = buildConceptGraph(segs, termos);
+  const linhaTempo = buildTimeline(segs, termos);
   let destacarTermos = true;
+
+  // Para sincronizar os diagramas com o áudio: quais termos há em cada trecho,
+  // e onde cada termo aparece pela primeira vez (para clicar e ouvir).
+  const termosPorSeg = new Map();
+  const startPorNorm = new Map();
+  for (const t of termos) {
+    for (const oc of (t.occurrences || [])) {
+      if (!termosPorSeg.has(oc.index)) termosPorSeg.set(oc.index, new Set());
+      termosPorSeg.get(oc.index).add(t.norm);
+      if (!startPorNorm.has(t.norm)) startPorNorm.set(t.norm, oc.start);
+    }
+  }
 
   const busca = el('input', { class: 'campo', type: 'search', placeholder: 'Buscar uma palavra nesta aula…', 'aria-label': 'Buscar nesta aula' });
   const resultadosBusca = el('div', { class: 'resultados-busca' });
@@ -70,11 +85,15 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
   const btnDestacar = el('button', { class: 'btn-mini ativo', onclick: () => { destacarTermos = !destacarTermos; btnDestacar.classList.toggle('ativo', destacarTermos); aplicarDestaque(); } }, '🖍️ Destacar termos');
   const roteiro = construirRoteiro(capitulos, irPara);
   const estudoGuiado = el('div', { class: 'estudo-guiado' });
+  const mapaPanel = el('div', { class: 'diagrama-panel' });
+  const linhaPanel = el('div', { class: 'diagrama-panel' });
   const barraEstudo = el('div', { class: 'barra-estudo' }, [
     el('button', { class: 'btn-mini btn-estudo', onclick: () => iniciarGuiado() }, '▶️ Estudo guiado'),
     el('button', { class: 'btn-mini', onclick: () => alternarFoco() }, '🎯 Modo foco'),
     btnDestacar,
     el('button', { class: 'btn-mini', onclick: () => roteiro.classList.toggle('aberto') }, `🗺️ Roteiro (${capitulos.length})`),
+    el('button', { class: 'btn-mini', onclick: () => toggleMapa() }, `🕸️ Mapa (${grafo.nodes.length})`),
+    el('button', { class: 'btn-mini', onclick: () => toggleLinha() }, `📅 Linha do tempo (${linhaTempo.length})`),
     el('button', { class: 'btn-mini', onclick: async (e) => {
       e.target.disabled = true;
       const cs = await criarCartoesDaAula(lessonId, segs, termos, capitulos, { recriar: true });
@@ -92,6 +111,8 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
       barraEstudo,
       estudoGuiado,
       roteiro,
+      mapaPanel,
+      linhaPanel,
       el('div', { class: 'barra-busca' }, [busca]),
       resultadosBusca,
       transcricao,
@@ -99,6 +120,61 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
     el('div', { class: 'coluna-lateral' }, [await painelTermos(lesson, segs, audio, ctx)]),
   ]);
   container.appendChild(layout);
+
+  // ---- Diagramas automáticos, que "acendem" conforme o áudio toca ----
+  let mapaMontado = false;
+  let linhaMontada = false;
+  function toggleMapa() {
+    if (!mapaMontado) { montarMapa(); mapaMontado = true; }
+    mapaPanel.classList.toggle('aberto');
+  }
+  function toggleLinha() {
+    if (!linhaMontada) { montarLinha(); linhaMontada = true; }
+    linhaPanel.classList.toggle('aberto');
+  }
+  function montarMapa() {
+    mapaPanel.appendChild(dica('Mapa de conceitos: termos ligados quando aparecem no mesmo trecho da aula. As bolinhas acendem conforme o áudio fala. Clique numa para ouvir onde ela aparece.'));
+    if (grafo.nodes.length < 2) { mapaPanel.appendChild(el('p', { class: 'dica' }, 'Poucos termos para montar um mapa.')); return; }
+    const wrap = el('div', { class: 'grafo-wrap' });
+    wrap.innerHTML = conceptGraphSVG(layoutGraph(grafo, { width: 640, height: 420 }));
+    wrap.querySelectorAll('.no-grafo').forEach((g) => {
+      const norm = g.getAttribute('data-norm');
+      const ir = () => { const st = startPorNorm.get(norm); if (st != null) irPara(st); };
+      g.addEventListener('click', ir);
+      g.addEventListener('keydown', (e) => { if (e.key === 'Enter') ir(); });
+    });
+    mapaPanel.appendChild(wrap);
+  }
+  function montarLinha() {
+    linhaPanel.appendChild(dica('Linha do tempo montada com as datas encontradas na aula. Cada evento traz uma frase da própria aula (com o horário).'));
+    if (!linhaTempo.length) { linhaPanel.appendChild(el('p', { class: 'dica' }, 'Nenhuma data encontrada nesta aula.')); return; }
+    const lista = el('div', { class: 'linha-tempo' });
+    for (const ev of linhaTempo) {
+      lista.appendChild(el('button', { class: 'linha-evento', 'data-start': ev.start, onclick: () => irPara(ev.start) }, [
+        el('span', { class: 'linha-data' }, ev.label),
+        el('span', { class: 'linha-texto' }, ev.text || ''),
+        el('span', { class: 'seg-tempo' }, formatTime(ev.start)),
+      ]));
+    }
+    linhaPanel.appendChild(lista);
+  }
+
+  // Acende os nós/eventos do trecho atual.
+  function sincronizarDiagramas(segIndex) {
+    const norms = termosPorSeg.get(segIndex) || new Set();
+    if (mapaMontado) {
+      mapaPanel.querySelectorAll('.no-grafo').forEach((g) => {
+        g.classList.toggle('aceso', norms.has(g.getAttribute('data-norm')));
+      });
+    }
+    if (linhaMontada) {
+      const segObj = segs[segIndex];
+      linhaPanel.querySelectorAll('.linha-evento').forEach((ev) => {
+        const st = Number(ev.getAttribute('data-start'));
+        ev.classList.toggle('aceso', segObj && st >= segObj.start && st < segObj.end);
+      });
+    }
+  }
 
   // ---- Estudo guiado: o player pausa ao fim de cada capítulo e propõe uma
   // atividade (recuperar, prever, responder uma lacuna, autoexplicar). ----
@@ -222,6 +298,7 @@ export async function renderAula(container, lessonId, ctx, seekSec = null) {
     if (idx !== atual && idx >= 0) {
       if (segEls[atual]) segEls[atual].classList.remove('seg-atual');
       atual = idx;
+      sincronizarDiagramas(atual);
       const node = segEls[atual];
       if (node) {
         node.classList.add('seg-atual');
